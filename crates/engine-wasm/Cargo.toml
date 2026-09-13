@@ -17,3 +17,11 @@ serde-wasm-bindgen = "0.6"
 
 [lints.rust]
 unsafe_code = "forbid"
+
+# wasm-pack 自带的 binaryen 比 rustc 老：rustc 现在默认发 bulk-memory 指令，
+# 而 wasm-opt 默认不认，校验会挂。显式开启这些特性。
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-O', '--enable-bulk-memory', '--enable-nontrapping-float-to-int']
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = ['-O0', '--enable-bulk-memory', '--enable-nontrapping-float-to-int']

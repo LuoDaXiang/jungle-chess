@@ -1,0 +1,6 @@
+{
+  "name": "jungle-chess-legacy",
+  "private": true,
+  "//": "根目录 package.json 声明了 type:module，会把这里的 CommonJS 测试当 ESM 解析。这个文件把 legacy/ 划回 CommonJS。旧版是 file:// 双击即玩的静态页，不能改成 ESM。",
+  "type": "commonjs"
+}
