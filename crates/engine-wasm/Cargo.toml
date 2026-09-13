@@ -1,0 +1,19 @@
+[package]
+name = "jungle-engine-wasm"
+description = "把 jungle-engine 编译成 WASM 给前端同步调用。界面算合法落点走这里，不走 IPC。"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jungle-engine = { workspace = true }
+serde = { workspace = true }
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.6"
+
+[lints.rust]
+unsafe_code = "forbid"

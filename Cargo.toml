@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = ["crates/engine", "crates/ai", "crates/engine-wasm", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["LuoXiang"]
+license = "MIT"
+
+[workspace.dependencies]
+jungle-engine = { path = "crates/engine" }
+jungle-ai = { path = "crates/ai" }
+serde = { version = "1", features = ["derive"] }
+
+# Cargo 只认工作区根的 profile，src-tauri 里的会被忽略，所以搬到这里。
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

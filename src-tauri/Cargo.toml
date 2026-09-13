@@ -1,0 +1,27 @@
+[package]
+name = "jungle-chess"
+description = "斗兽棋 · 教学与陪玩"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[lib]
+# `_lib` 后缀是 Tauri 模板要求的：Windows 上 lib 名和 bin 名冲突。
+# https://github.com/rust-lang/cargo/issues/8519
+name = "jungle_chess_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { workspace = true }
+serde_json = "1"
+
+# 后端只承载 AI 搜索。规则通过 WASM 在前端同步跑，不走 IPC。
+jungle-engine = { workspace = true }
+jungle-ai = { workspace = true }
+
+# profile.release 在工作区根的 Cargo.toml —— Cargo 忽略非根包的 profile。

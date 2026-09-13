@@ -1,0 +1,77 @@
+# 每次 push 和 PR 都跑。目的只有一个：规则行为不许悄悄变。
+name: CI
+
+on:
+  push:
+    branches: [main, rewrite-tauri]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust 测试
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: 格式检查
+        run: cargo fmt --all -- --check
+
+      # 规则引擎和 AI 不依赖 Tauri，可以脱离桌面依赖单独测，CI 快很多。
+      - name: 单元测试
+        run: cargo test -p jungle-engine -p jungle-ai
+
+      - name: Clippy
+        run: cargo clippy -p jungle-engine -p jungle-ai -- -D warnings
+
+      # 界面靠 WASM 同步调引擎。这一步保证引擎没有引入不能编译成 WASM 的依赖。
+      - name: 引擎能编译成 WASM
+        run: cargo build -p jungle-engine-wasm --target wasm32-unknown-unknown
+
+  legacy:
+    name: 旧版 JS 基准（移植参考）
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # 旧版是移植的行为基准。它一旦挂了，说明参考实现被动过，
+      # 那么「Rust 版和旧版行为一致」这个判断就失去依据。
+      - name: 旧版 60 个测试
+        run: node --test legacy/test/*.test.js
+
+  frontend:
+    name: 前端构建
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: jetli/wasm-pack-action@v0.4.0
+
+      - run: npm ci
+      - name: 构建 WASM 引擎
+        run: npm run wasm:build
+      - name: 类型检查 + 打包
+        run: npm run build

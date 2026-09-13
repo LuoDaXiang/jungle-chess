@@ -1,0 +1,14 @@
+[package]
+name = "jungle-ai"
+description = "斗兽棋电脑对手。只编译原生，跑在 Tauri 后端，可吃满多核。"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+jungle-engine = { workspace = true }
+serde = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

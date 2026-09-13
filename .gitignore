@@ -1,1 +1,28 @@
+# --- macOS ---
 .DS_Store
+
+# --- Node / Vite ---
+node_modules
+dist
+dist-ssr
+*.local
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Rust ---
+target/
+**/*.rs.bk
+
+# --- wasm-pack 产物（由 build 生成，不入库）---
+crates/engine-wasm/pkg/
+
+# --- 编辑器 ---
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.sw?
