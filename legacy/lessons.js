@@ -4,6 +4,10 @@
  * Each `key` maps to audio/<key>.mp3. `text` is both the speechSynthesis
  * fallback and the script for generating those files, so the two never drift.
  *
+ * 完整的教学改造方案（8 关结构、新目标类型、四子迷你对局的实测数据）在
+ * docs/lessons-plan.md。这里只做了不需要改动教学运行时的那部分——
+ * 其余等 React 重写时一起做，别在要扔掉的 index.html 里实现一套判定系统。
+ *
  * goal types:
  *   inspect     - click every own piece once
  *   move        - move a piece onto an exact square
@@ -67,18 +71,31 @@
           success: { key: 'l2_s2_ok', text: '躲得好。打不过的时候，走开也是聪明的办法。' }
         },
         {
+          // 场上只有这两只，所以撞完谁都没子了 —— 引擎判和棋。先让孩子撞，
+          // 再在成功语里给这件事命名，而不是开头就把答案说掉。
           setup: [P(3, 4, 'leopard', 'red'), P(3, 3, 'leopard', 'black')],
           turn: 'red',
-          say: { key: 'l2_s3', text: '两只一样大的豹子碰上了。一样大的撞在一起会同归于尽，两只一起消失。你试试。' },
+          say: { key: 'l2_s3', text: '现在场上只剩两只一样大的豹子。让它们撞在一起，看看会发生什么。' },
           goal: { type: 'capture', target: [3, 3] },
-          success: { key: 'l2_s3_ok', text: '看到了吗？两只都不见了。一样大的碰在一起，谁也占不到便宜。' }
+          success: { key: 'l2_s3_ok', text: '两只都不见了，这叫同归于尽。场上一个棋子也没剩，这一盘算平手。' }
+        },
+        {
+          // 同归于尽最要紧的后果：拿最后一个子去换，对方还有棋，就是送对方赢。
+          // 黑方必须留一只猫 —— 只有两只狮子的话撞完是平手，证明不了会输。
+          // 这一步故意让孩子撞得下去：撞了才看得见后果，看见了才记得住。
+          setup: [P(3, 4, 'lion', 'red'), P(3, 3, 'lion', 'black'), P(0, 0, 'cat', 'black')],
+          turn: 'red',
+          say: { key: 'l2_s4', text: '我们只剩一只狮子了，对面还有狮子和猫。你觉得能不能去撞对面那只狮子？' },
+          goal: { type: 'safeMove', forbidden: [[3, 3]] },
+          hints: [{ at: [3, 3], key: 'l2_s4_no', text: '撞了两只狮子都没了，我们一个棋子也不剩，对面还有猫，就输了。' }],
+          success: { key: 'l2_s4_ok', text: '躲开了。最后一只要留着，不能随便拿去换，换掉我们就输了。' }
         },
         {
           setup: [P(3, 4, 'lion', 'red'), P(3, 3, 'leopard', 'black'), P(2, 2, 'dog', 'black')],
           turn: 'red',
-          say: { key: 'l2_s4', text: '最后一题。狮子和豹子，谁厉害？厉害的那个去吃掉另一个。' },
+          say: { key: 'l2_s5', text: '最后一题。狮子和豹子，谁厉害？厉害的那个去吃掉另一个。' },
           goal: { type: 'capture', target: [3, 3] },
-          success: { key: 'l2_s4_ok', text: '全对！你已经记住谁能吃谁了。' }
+          success: { key: 'l2_s5_ok', text: '全对！你已经记住谁能吃谁了。' }
         }
       ]
     },

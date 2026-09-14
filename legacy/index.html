@@ -303,6 +303,10 @@
   var LESSONS = window.Lessons.LESSONS, VOICE = window.Lessons.VOICE;
 
   var UNDO_PER_GAME = 3;         // enough to fix a misclick, not enough to brute-force
+  // How long a lesson holds the wrong move on screen before putting it back.
+  // Long enough for a six-year-old to see two pieces vanish; short enough that
+  // it does not feel like the game froze.
+  var CONSEQUENCE_PAUSE_MS = 850;
   var AI_THINK_DELAY = 550;      // ms; a move that lands instantly reads as a glitch
   var MAX_LEVEL = AI.MAX_LEVEL;
   var LEVEL_NAME = { 1: '最简单', 2: '有点难', 3: '很难', 4: '非常难', 5: '最厉害' };
@@ -715,15 +719,31 @@
       var bad = g.forbidden.some(function (f) { return J.idx(f[0], f[1]) === to; });
       if (bad) {
         // Legal but exactly the mistake this step is about (walking into the
-        // enemy trap). Shaking is wrong here: the move IS legal. Explain it,
-        // then rewind so the child gets to make the right one.
+        // enemy trap, or trading off your last piece). Shaking is wrong here:
+        // the move IS legal. Let the child SEE what it did, explain it, and
+        // only then rewind so they get to make the right one.
+        //
+        // The rewind used to be synchronous. render() had already run, but the
+        // browser never got a frame to paint before the board was put back, so
+        // a collision looked like nothing happened while the voice said both
+        // pieces were gone. The cause was never on screen.
         var h = null;
         (st.hints || []).forEach(function (x) {
           if (J.idx(x.at[0], x.at[1]) === to) h = x;
         });
-        rewindLessonMove();
+        // Lock input for the pause: a click landing mid-rewind would pop a
+        // snapshot that no longer matches the board.
+        S.busy = true;
         say(h || VOICE.illegal);
-        setMsg('我们退回去，再走一次');
+        setMsg('看清楚了吗？我们退回去，再走一次');
+        var atLesson = S.lessonIdx, atStep = S.stepIdx;
+        setTimeout(function () {
+          // The child may have quit to the menu or restarted during the pause;
+          // a stale timer must not drag some other board backwards.
+          if (S.mode !== 'lesson' || S.lessonIdx !== atLesson || S.stepIdx !== atStep) return;
+          rewindLessonMove();
+          S.busy = false;
+        }, CONSEQUENCE_PAUSE_MS);
         return;
       }
       ok = true;
