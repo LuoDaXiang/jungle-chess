@@ -1941,6 +1941,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "jungle-difftool"
+version = "0.1.0"
+dependencies = [
+ "jungle-engine",
+ "serde_json",
+]
+
+[[package]]
 name = "jungle-engine"
 version = "0.1.0"
 dependencies = [
@@ -1952,6 +1960,7 @@ dependencies = [
 name = "jungle-engine-wasm"
 version = "0.1.0"
 dependencies = [
+ "js-sys",
  "jungle-engine",
  "serde",
  "serde-wasm-bindgen",

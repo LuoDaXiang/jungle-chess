@@ -65,6 +65,21 @@ jobs:
       - name: 旧版 60 个测试
         run: node --test legacy/test/*.test.js
 
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      # Rust 引擎的实现和它的单元测试是同一个人读同一份 JS 写出来的：
+      # 一处误读会同时进到两边，测试照样全绿。差分测试换了个独立 oracle
+      # ——旧 JS 引擎本身——才抓得住这种一致的误读。
+      # 三个种子，避免单一种子恰好绕开某条规则。
+      - name: 构建差分工具
+        run: cargo build --release -p jungle-difftool
+      - name: 差分测试 · Rust 引擎 vs 旧 JS 引擎
+        run: |
+          node tools/differential.cjs 3000
+          node tools/differential.cjs 1500 7
+          node tools/differential.cjs 1500 99991
+
   frontend:
     name: 前端构建
     runs-on: ubuntu-22.04

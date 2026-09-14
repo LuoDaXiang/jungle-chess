@@ -12,7 +12,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "test:rust": "cargo test -p jungle-engine -p jungle-ai",
-    "test:legacy": "node --test legacy/test/*.test.js"
+    "test:legacy": "node --test legacy/test/*.test.js",
+    "test:diff": "cargo build --release -p jungle-difftool && node tools/differential.cjs"
   },
   "dependencies": {
     "react": "^19.1.0",
