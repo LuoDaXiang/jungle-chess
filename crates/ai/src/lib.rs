@@ -937,23 +937,28 @@ mod tests {
     // ---------- 搜索质量 ----------
 
     #[test]
-    fn deeper_tiers_actually_search_deeper() {
+    fn searching_deeper_costs_more_nodes_and_reports_the_depth() {
+        // 不用时间预算：那样断言就依赖墙钟，在慢或忙的 CI runner 上会 flake，
+        // 而且 CI 跑的是 debug 构建，比这里慢得多。难度阶梯本身由
+        // `only_the_top_tier_searches_to_the_deadline` 从结构上锁住，
+        // 这里只验证「深度确实被搜到并如实上报，而且越深越费节点」。
         let g = e::create_game();
-        let mut last = 0u8;
-        for n in 2..=MAX_LEVEL {
+        let mut last_nodes = 0u64;
+        for d in 1..=5u8 {
             let opts = Options {
-                fixed_depth: None,
+                fixed_depth: Some(d),
                 ..Default::default()
             };
-            let (_, st) = choose_move_with_stats(&g, lv(n), &opts);
+            let (mv, st) = choose_move_with_stats(&g, lv(5), &opts);
+            assert!(mv.is_some(), "深度 {d} 没选出走法");
+            assert_eq!(st.depth, d, "上报的层数应等于钉死的深度");
             assert!(
-                st.depth >= last,
-                "第 {n} 档只搜到 {} 层，比第 {} 档的 {last} 层还浅",
-                st.depth,
-                n - 1
+                st.nodes > last_nodes,
+                "深度 {d} 只搜了 {} 个节点，不比深度 {} 的 {last_nodes} 多",
+                st.nodes,
+                d - 1
             );
-            assert!(st.nodes > 0, "第 {n} 档一个节点都没搜");
-            last = st.depth;
+            last_nodes = st.nodes;
         }
     }
 
@@ -988,17 +993,17 @@ mod tests {
             ],
             Red,
         );
+        // 钉死深度而不是给时间预算：断言不能依赖墙钟，否则慢 runner 上会 flake。
+        // 顶档「没有封顶」这件事由 only_the_top_tier_searches_to_the_deadline
+        // 从结构上锁住（max_depth() == None）；这里锁住搜索机器确实跑得过 8 层。
         let opts = Options {
-            budget_ms: Some(2000),
+            fixed_depth: Some(12),
             ..Default::default()
         };
         let (mv, st) = choose_move_with_stats(&g, lv(5), &opts);
         assert!(mv.is_some());
-        assert!(
-            st.depth > 8,
-            "残局两秒只搜到 {} 层，顶档封顶没解开",
-            st.depth
-        );
+        assert_eq!(st.depth, 12, "残局搜不到 12 层，深度 8 以上这条路是断的");
+        assert!(st.depth > 8);
     }
 
     #[test]
