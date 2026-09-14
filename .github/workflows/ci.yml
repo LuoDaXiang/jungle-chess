@@ -34,6 +34,20 @@ jobs:
       - name: Clippy
         run: cargo clippy -p jungle-engine -p jungle-ai -- -D warnings
 
+      # Tauri 后端链接系统 WebView，check 阶段的 pkg-config 就需要这些头文件。
+      - name: Tauri 的 Linux 系统依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev libxdo-dev libayatana-appindicator3-dev \
+            librsvg2-dev build-essential file
+
+      # src-tauri 的 Cargo.toml 被改过（依赖重写、profile 搬到工作区根），
+      # 但之前没有任何 job 碰它。check 不链接，比 build 快很多，
+      # 足以抓住依赖和配置写错。真正的链接和打包由 Release 工作流覆盖。
+      - name: Tauri 后端能编译
+        run: cargo check -p jungle-chess
+
       # 界面靠 WASM 同步调引擎。这一步保证引擎没有引入不能编译成 WASM 的依赖。
       - name: 引擎能编译成 WASM
         run: cargo build -p jungle-engine-wasm --target wasm32-unknown-unknown

@@ -77,7 +77,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('nightly-{0}', github.run_number) }}
-          releaseName: 斗兽棋 ${{ github.ref_name }}
+          releaseName: 斗兽棋 ${{ github.ref_type == 'tag' && github.ref_name || format('nightly-{0}', github.run_number) }}
           releaseBody: '给孩子装的话，下载对应系统的安装包。Windows 是 .msi，macOS 是 .dmg。'
           releaseDraft: true      # 先出草稿，你确认过再发布
           prerelease: false

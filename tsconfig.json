@@ -18,7 +18,13 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* WASM 引擎。类型来自 wasm-pack 生成的 .d.ts，所以引擎接口改了、
+       前端没跟上，tsc 会直接报错——这正是想要的。 */
+    "paths": {
+      "jungle-engine-wasm": ["./crates/engine-wasm/pkg/jungle_engine_wasm"]
+    }
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

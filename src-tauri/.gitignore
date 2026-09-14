@@ -1,0 +1,5 @@
+# Tauri 构建产物
+/target/
+
+# tauri-build 在编译时生成，不入库
+/gen/schemas
