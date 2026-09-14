@@ -13,6 +13,9 @@
 #![forbid(unsafe_code)]
 
 use jungle_engine as e;
+/// 局面指纹现在住在引擎里——它是局面的属性，不是搜索的属性。
+/// 这里转发一下，免得调用点到处改。
+pub use jungle_engine::position_key;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -93,71 +96,6 @@ impl Level {
     }
 }
 
-// ---------------------------------------------------------------- Zobrist
-
-/// splitmix64，用来在编译期生成 Zobrist 表。固定常数，结果完全确定——
-/// 同一个局面在任何机器上、任何一次运行里哈希都相同，这样搜索可复现。
-const fn splitmix64(state: u64) -> (u64, u64) {
-    let next = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
-    let mut z = next;
-    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-    (next, z ^ (z >> 31))
-}
-
-/// 63 格 × 16 种棋子（8 等级 × 2 方），外加一个走子方的键。
-struct Zobrist {
-    cells: [[u64; 16]; e::CELLS],
-    black_to_move: u64,
-}
-
-const ZOBRIST: Zobrist = {
-    let mut cells = [[0u64; 16]; e::CELLS];
-    let mut s = 0x243F_6A88_85A3_08D3u64;
-    let mut i = 0;
-    while i < e::CELLS {
-        let mut k = 0;
-        while k < 16 {
-            let (ns, v) = splitmix64(s);
-            s = ns;
-            cells[i][k] = v;
-            k += 1;
-        }
-        i += 1;
-    }
-    let (_, black_to_move) = splitmix64(s);
-    Zobrist {
-        cells,
-        black_to_move,
-    }
-};
-
-const fn piece_slot(rank: e::Rank, side: e::Side) -> usize {
-    let base = match side {
-        e::Side::Red => 0,
-        e::Side::Black => 8,
-    };
-    base + (rank as usize) - 1
-}
-
-fn hash_of(board: &e::Board, turn: e::Side) -> u64 {
-    let mut h = 0u64;
-    for (i, cell) in board.iter().enumerate() {
-        if let Some(p) = cell {
-            h ^= ZOBRIST.cells[i][piece_slot(p.rank, p.side)];
-        }
-    }
-    if turn == e::Side::Black {
-        h ^= ZOBRIST.black_to_move;
-    }
-    h
-}
-
-/// 局面指纹。防重复列表（`avoid`）用它，跨 IPC 传的就是这些 u64。
-pub fn position_key(g: &e::Game) -> u64 {
-    hash_of(&g.board, g.turn)
-}
-
 // ---------------------------------------------------------------- 搜索状态
 
 /// 搜索用的局面。
@@ -194,7 +132,7 @@ impl SearchPos {
                 e::Side::Black => black += 1,
             }
         }
-        let hash = hash_of(&g.board, g.turn);
+        let hash = e::position_key(g);
         SearchPos {
             game: g.clone(),
             red,
@@ -218,11 +156,11 @@ impl SearchPos {
     }
 
     fn xor_cell(&mut self, i: usize, p: e::Piece) {
-        self.hash ^= ZOBRIST.cells[i][piece_slot(p.rank, p.side)];
+        self.hash ^= e::zobrist_piece(i, p);
     }
 
     fn flip_side(&mut self) {
-        self.hash ^= ZOBRIST.black_to_move;
+        self.hash ^= e::zobrist_side_to_move();
     }
 
     /// 就地走子。不校验合法性——调用方只喂 `legal_moves` 产出的走法。
@@ -551,6 +489,14 @@ pub fn hangs_piece(g: &e::Game, m: e::Move) -> bool {
 }
 
 /// 确定性 PRNG。第一档要有随机性，但测试必须能钉死它。
+const fn splitmix64(state: u64) -> (u64, u64) {
+    let next = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    let mut z = next;
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    (next, z ^ (z >> 31))
+}
+
 struct Rng(u64);
 
 impl Rng {
@@ -810,7 +756,7 @@ mod tests {
             let u = sp.make_move(m.from, m.to);
             assert_eq!(
                 sp.hash,
-                hash_of(&sp.game.board, sp.game.turn),
+                e::position_key(&sp.game),
                 "增量哈希必须等于从头算的哈希，走法 {m:?}"
             );
             sp.unmake_move(u);

@@ -10,6 +10,8 @@ import init, {
   create_game,
   legal_moves_from,
   apply_move,
+  name_cn,
+  position_key,
 } from "jungle-engine-wasm";
 import "./App.css";
 
@@ -28,11 +30,6 @@ type MoveOutcome = {
   captured: Piece | null;
   mutual: boolean;
   outcome: Outcome;
-};
-
-const NAME_CN: Record<Rank, string> = {
-  rat: "鼠", cat: "猫", dog: "犬", wolf: "狼",
-  leopard: "豹", tiger: "虎", lion: "狮", elephant: "象",
 };
 
 function App() {
@@ -73,8 +70,8 @@ function App() {
         setSelected(null);
         setLog(
           [
-            `${NAME_CN[mo.moved.rank]} ${selected}→${i}`,
-            mo.captured ? `吃 ${NAME_CN[mo.captured.rank]}` : null,
+            `${name_cn(mo.moved.rank)} ${selected}→${i}`,
+            mo.captured ? `吃 ${name_cn(mo.captured.rank)}` : null,
             mo.mutual ? "同归于尽" : null,
             mo.outcome.kind === "won"
               ? `${mo.outcome.side === "red" ? "绿方" : "红方"}胜`
@@ -154,13 +151,16 @@ function App() {
                 color: p?.side === "black" ? "#cf3a34" : "#2c6a26",
               }}
             >
-              {p ? NAME_CN[p.rank] : isTarget ? "·" : ""}
+              {p ? name_cn(p.rank) : isTarget ? "·" : ""}
             </button>
           );
         })}
       </div>
 
       <p style={{ fontSize: 13, minHeight: 20 }}>{log}</p>
+      <p style={{ fontSize: 11, opacity: 0.55, fontFamily: "monospace" }}>
+        局面指纹 {position_key(game).toString(16)} · 同步取自引擎，防重复列表用它
+      </p>
       <p style={{ fontSize: 12, opacity: 0.7 }}>
         点自己的棋子看落点。落点由 Rust 引擎经 WASM 同步返回，无 IPC、无等待。
         这只是连通性自检，不是最终界面。

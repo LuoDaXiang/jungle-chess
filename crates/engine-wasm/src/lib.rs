@@ -77,6 +77,23 @@ pub fn make_position(pieces: JsValue, turn: JsValue) -> Result<JsValue, JsValue>
     to_js(&engine::make_position(&list, t))
 }
 
+/// 局面指纹。界面维护防重复列表（传给 AI 的 `avoid`）要它。
+///
+/// 这是同步的：为一个纯哈希走 IPC 是荒唐的。而且它和 AI 置换表用的是
+/// 同一个引擎函数，两边算出来必然一致。
+#[wasm_bindgen]
+pub fn position_key(game: JsValue) -> Result<u64, JsValue> {
+    let g: engine::Game = from_js(game)?;
+    Ok(engine::position_key(&g))
+}
+
+/// 棋子的汉字名。界面别自己维护一张表——那是把引擎数据抄了第二份，会漂移。
+#[wasm_bindgen]
+pub fn name_cn(rank: JsValue) -> Result<String, JsValue> {
+    let r: engine::Rank = from_js(rank)?;
+    Ok(r.name_cn().to_string())
+}
+
 // --- 地形。都是纯函数，前端画棋盘时逐格调用。 ---
 
 #[wasm_bindgen]

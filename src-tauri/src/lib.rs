@@ -88,17 +88,12 @@ async fn think(req: ThinkRequest) -> Result<ThinkReply, ThinkError> {
     })
 }
 
-/// 局面指纹。界面维护防重复列表时要用，必须和 AI 内部用的是同一个函数。
-#[tauri::command]
-fn position_key(game: e::Game) -> u64 {
-    ai::position_key(&game)
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![think, position_key])
+        // position_key 不在这里：界面经 WASM 同步拿，不必为一个纯哈希走 IPC。
+        .invoke_handler(tauri::generate_handler![think])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

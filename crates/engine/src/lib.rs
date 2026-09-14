@@ -445,6 +445,83 @@ pub fn apply_move(g: &Game, mv: Move) -> Result<(Game, MoveOutcome), MoveError> 
     ))
 }
 
+// ---------------------------------------------------------------- 局面指纹
+
+/// splitmix64，用来在编译期生成 Zobrist 表。固定常数，结果完全确定——
+/// 同一个局面在任何机器上、任何一次运行里哈希都相同，所以搜索可复现，
+/// 前端和后端算出来的也必然一致。
+const fn splitmix64(state: u64) -> (u64, u64) {
+    let next = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    let mut z = next;
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    (next, z ^ (z >> 31))
+}
+
+/// 63 格 × 16 种棋子（8 等级 × 2 方），外加一个走子方的键。
+struct Zobrist {
+    cells: [[u64; 16]; CELLS],
+    black_to_move: u64,
+}
+
+const ZOBRIST: Zobrist = {
+    let mut cells = [[0u64; 16]; CELLS];
+    let mut s = 0x243F_6A88_85A3_08D3u64;
+    let mut i = 0;
+    while i < CELLS {
+        let mut k = 0;
+        while k < 16 {
+            let (ns, v) = splitmix64(s);
+            s = ns;
+            cells[i][k] = v;
+            k += 1;
+        }
+        i += 1;
+    }
+    let (_, black_to_move) = splitmix64(s);
+    Zobrist {
+        cells,
+        black_to_move,
+    }
+};
+
+const fn piece_slot(rank: Rank, side: Side) -> usize {
+    let base = match side {
+        Side::Red => 0,
+        Side::Black => 8,
+    };
+    base + (rank as usize) - 1
+}
+
+/// 某个棋子在某一格上的 Zobrist 键。AI 做增量更新时 xor 它，
+/// 所以搜索不必每个节点重算整盘。
+pub fn zobrist_piece(i: usize, p: Piece) -> u64 {
+    ZOBRIST.cells[i][piece_slot(p.rank, p.side)]
+}
+
+/// 走子方的 Zobrist 键。黑方走棋时 xor 进去。
+pub const fn zobrist_side_to_move() -> u64 {
+    ZOBRIST.black_to_move
+}
+
+/// 局面指纹。
+///
+/// 放在引擎而不是 AI 里：它是局面的属性，不是搜索的属性。界面维护防重复列表
+/// 要它（经 WASM 同步调用，不走 IPC），AI 的置换表也要它——同一个函数，
+/// 两边算出来必然一致。
+pub fn position_key(g: &Game) -> u64 {
+    let mut h = 0u64;
+    for (i, cell) in g.board.iter().enumerate() {
+        if let Some(p) = cell {
+            h ^= zobrist_piece(i, *p);
+        }
+    }
+    if g.turn == Side::Black {
+        h ^= zobrist_side_to_move();
+    }
+    h
+}
+
 #[cfg(test)]
 mod tests {
     use super::Rank::*;
@@ -534,6 +611,27 @@ mod tests {
         }
         assert_eq!(den_of(Red), idx(3, 8));
         assert_eq!(den_of(Black), idx(3, 0));
+    }
+
+    #[test]
+    fn position_key_separates_side_to_move() {
+        let a = pos(&[(3, 4, Wolf, Red)], Red);
+        let mut b = a.clone();
+        b.turn = Black;
+        assert_ne!(
+            position_key(&a),
+            position_key(&b),
+            "同一摆法不同走子方必须不同指纹"
+        );
+    }
+
+    #[test]
+    fn position_key_separates_pieces_and_squares() {
+        let a = pos(&[(3, 4, Wolf, Red)], Red);
+        let b = pos(&[(3, 4, Wolf, Black)], Red);
+        let c = pos(&[(3, 5, Wolf, Red)], Red);
+        assert_ne!(position_key(&a), position_key(&b), "换一方必须换指纹");
+        assert_ne!(position_key(&a), position_key(&c), "换一格必须换指纹");
     }
 
     #[test]
