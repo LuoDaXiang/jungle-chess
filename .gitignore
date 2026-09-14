@@ -26,3 +26,6 @@ crates/engine-wasm/pkg/
 .idea
 *.suo
 *.sw?
+
+# 参考照片是别人商品的美术，只在本地对比用，不入库
+art/_ref_local.*
