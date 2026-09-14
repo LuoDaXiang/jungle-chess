@@ -21,7 +21,22 @@
   .col > .cap { font-size: 13px; color: #6b6b6b; margin-bottom: 6px; font-weight: 700; }
   img.ref { width: 640px; max-width: 92vw; border-radius: 10px; display: block; }
 
-  .board { display: grid; gap: 3px; padding: 6px; border-radius: 10px; }
+  .board { display: grid; gap: 3px; padding: 6px; border-radius: 10px; position: relative; }
+  /* 连成一片的河。第一版能看见 12 个独立蓝格，参考图读起来是两片池塘 ——
+     这改变的是棋盘的空间结构，不只是装饰。 */
+  .pool {
+    position: absolute; border-radius: 14px; z-index: 0;
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,.45);
+  }
+  .pool::after {
+    content: ''; position: absolute; inset: 7px; border-radius: 9px;
+    border: 3px dashed rgba(255,255,255,.55);
+  }
+  .pool .riv {
+    position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+    text-align: center; color: rgba(255,255,255,.75); font-weight: 800;
+  }
+  .sq { z-index: 1; }
   .sq { position: relative; display: grid; place-items: center; border-radius: 9px; }
   .sq svg { width: 78%; height: 78%; }
   .sq.water svg { width: 90%; height: 90%; }
@@ -31,11 +46,10 @@
     position: relative; width: 94%; height: 94%; border-radius: 22%;
     display: block; box-shadow: 0 1px 0 rgba(0,0,0,.18);
   }
-  .piece svg { position: absolute; left: 1%; top: 4%; width: 80%; height: 92%; }
+  .piece svg { position: absolute; left: 3%; bottom: 1%; width: 94%; height: 76%; }
   .piece .nm {
-    position: absolute; right: 3%; top: 50%; transform: translateY(-50%);
-    font-weight: 800; line-height: 1.05; writing-mode: vertical-rl;
-    letter-spacing: 0;
+    position: absolute; left: 0; right: 0; top: 2%;
+    text-align: center; font-weight: 800; line-height: 1;
   }
 
   .strip { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
@@ -56,8 +70,9 @@
 <h1>对照实体棋盘</h1>
 <p class="sub">
   左边是你给的实体棋盘（<b>本地文件，不入库</b> —— 那是别人商品的美术，公开仓库里不该有）。<br>
-  右边是按它的<b>画法系统</b>重建的，形状坐标全部重新定，不是描摹。颜色不照抄照片：
-  那张照片室内暖光偏色，采出来发浑，取的是同色系干净饱和值。
+  右边是<b>第二版</b>：拆掉了第一版的统一脸模（八只共用一张脸换耳朵），现在每只有自己的头轮廓和口鼻区。
+  象补了鼻子（第一版漏了，缩小后像蓝熊），狮的鬃毛改成 14 个毛瓣（原来用虚线描边，缩小像齿轮），
+  「工」字鼻换成鼻块加嘴弧。<b>汉字移到头顶</b>，河连成两片，橙格上了木纹，陷阱和兽穴照参考图重画。
 </p>
 
 <div class="side">
@@ -110,14 +125,14 @@
       sq.style.width = sq.style.height = px + 'px';
       const alt = (c + r) % 2;
       let bg, art = '';
-      if (isWater(i)) { bg = P.water; sq.classList.add('water');
+      if (isWater(i)) { bg = 'transparent'; sq.classList.add('water');   // 底色交给 .pool
         if (isCroc(i)) art = set.sprites.croc; else if (LILY.includes(i)) art = set.sprites.lily; }
       else if (i === idx(3,8)) { bg = P.denMineBg; art = set.sprites.denMine; }
       else if (i === idx(3,0)) { bg = P.denFoeBg; art = set.sprites.denFoe; }
       else if (TRAPS.includes(i)) { bg = P.trapBg; art = set.sprites.trap; }
       else if (r <= 2) bg = alt ? P.grassFoeAlt : P.grassFoe;
       else if (r >= 6) bg = alt ? P.grassMineAlt : P.grassMine;
-      else bg = alt ? P.earthAlt : P.earth;
+      else { bg = alt ? P.earthAlt : P.earth; art = set.sprites['wood' + ((c + r) % 3)]; }
       sq.style.background = bg;
       sq.innerHTML = art;
       const p = at.get(i);
@@ -130,6 +145,19 @@
       }
       b.appendChild(sq);
     }
+    // 两片池塘：列 1-2 和 4-5，行 3-5
+    for (const c0 of [1, 4]) {
+      const pool = el('div', 'pool');
+      pool.style.background = P.water;
+      pool.style.left = (6 + c0 * (px + 3)) + 'px';
+      pool.style.top = (6 + 3 * (px + 3)) + 'px';
+      pool.style.width = (2 * px + 3) + 'px';
+      pool.style.height = (3 * px + 6) + 'px';
+      const t = el('div', 'riv', c0 === 1 ? '小' : '河');   // 一池一个字，照参考图
+      t.style.fontSize = (px * 0.3).toFixed(1) + 'px';
+      pool.appendChild(t);
+      b.appendChild(pool);
+    }
     return b;
   }
 
@@ -141,8 +169,8 @@
     const box = el('div', 'box');
     box.style.cssText = `width:118px;height:118px;background:${P.card}`;
     box.innerHTML = set.sprites[a] +
-      `<span style="position:absolute;right:5%;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-weight:800;font-size:26px;color:${P.borderMine}">${NAME_CN[a]}</span>`;
-    box.querySelector('svg').style.cssText = 'position:absolute;left:1%;top:4%;width:80%;height:92%';
+      `<span style="position:absolute;left:0;right:0;top:3%;text-align:center;font-weight:800;font-size:26px;color:${P.borderMine}">${NAME_CN[a]}</span>`;
+    box.querySelector('svg').style.cssText = 'position:absolute;left:3%;bottom:1%;width:94%;height:76%';
     box.style.position = 'relative';
     one.appendChild(box);
     one.appendChild(el('div', 'lab', NAME_CN[a]));
