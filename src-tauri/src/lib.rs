@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 static LATEST_REQUEST: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ThinkRequest {
     pub game: e::Game,
     pub level: u8,
@@ -21,8 +22,12 @@ pub struct ThinkRequest {
     pub request_id: u64,
     /// 近期局面指纹，用来打散来回蹭子。由界面维护并传进来——
     /// 引擎不存历史，这个责任在持有局面的那一侧。
+    ///
+    /// 是字符串不是数字：指纹是 u64，而 Tauri 的 IPC 走 JSON，
+    /// JS 的 BigInt 序列化不了。截断成 53 位能凑合，但那是给以后埋雷，
+    /// 所以按十进制字符串传，两边都不丢精度。
     #[serde(default)]
-    pub avoid: Vec<u64>,
+    pub avoid: Vec<String>,
     /// 覆盖档位自带的时间预算。给基准测试和测试用。
     #[serde(default)]
     pub budget_ms: Option<u64>,
@@ -60,7 +65,9 @@ async fn think(req: ThinkRequest) -> Result<ThinkReply, ThinkError> {
     let opts = ai::Options {
         budget_ms: req.budget_ms,
         fixed_depth: None,
-        avoid: req.avoid,
+        // 解析不了的条目直接丢弃：avoid 只是个启发式，少一条指纹不影响正确性，
+        // 为它让整次搜索失败不划算。
+        avoid: req.avoid.iter().filter_map(|s| s.parse::<u64>().ok()).collect(),
         rng_seed: None,
     };
 

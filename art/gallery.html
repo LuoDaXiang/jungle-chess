@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>斗兽棋美术选型</title>
+<style>
+  :root { --ink: #2b2b2b; --paper: #faf7f0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    padding: 20px 24px 80px;
+  }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: #6b6b6b; font-size: 14px; margin: 0 0 18px; line-height: 1.7; }
+  .sub b { color: #b3261e; }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 20; background: var(--paper);
+    padding: 10px 0; border-bottom: 2px solid #e3ddd0; margin-bottom: 18px;
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  }
+  .toolbar label { font-size: 14px; display: flex; gap: 6px; align-items: center; }
+
+  .set {
+    border: 2px solid #e3ddd0; border-radius: 12px; background: #fff;
+    padding: 16px; margin-bottom: 18px;
+  }
+  .set.picked { border-color: #b3261e; box-shadow: 0 0 0 3px rgba(179,38,30,.15); }
+  .set-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 12px; }
+  .set-head h2 { font-size: 19px; margin: 0; }
+  .tag {
+    font-size: 12px; padding: 2px 9px; border-radius: 999px;
+    background: #eee; color: #444; font-weight: 700;
+  }
+  .tag.Claude { background: #dbeafe; color: #1e40af; }
+  .tag.Codex { background: #dcfce7; color: #166534; }
+  .tag[class*="Design"] { background: #fae8ff; color: #86198f; }
+  .note { font-size: 13px; color: #6b6b6b; margin: 0; flex: 1 1 260px; }
+  .pick { font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 2px solid var(--ink); background: #fff; cursor: pointer; font-weight: 700; }
+  .set.picked .pick { background: #b3261e; color: #fff; border-color: #b3261e; }
+
+  .cols { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+  .panel h3 { font-size: 12px; color: #8a8378; margin: 0 0 6px; font-weight: 700; letter-spacing: .5px; }
+
+  /* 棋盘缩略，用真实格子尺寸 */
+  .board { display: grid; gap: 2px; padding: 3px; border-radius: 8px; }
+  .sq { position: relative; display: grid; place-items: center; border-radius: 4px; }
+  .sq svg { width: 74%; height: 74%; }
+  .sq.water svg { width: 88%; height: 88%; }
+  .piece {
+    position: relative; width: 90%; height: 90%; border-radius: 22%;
+    display: grid; place-items: center; border: 3px solid;
+  }
+  .piece svg { position: absolute; inset: 6%; width: 88%; height: 88%; }
+  .piece .nm {
+    position: absolute; right: 4%; bottom: 0; font-weight: 800; line-height: 1;
+    text-shadow: 0 1px 0 #fff, 0 0 3px #fff;
+  }
+
+  /* 尺寸压力测试 */
+  .sizes { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; gap: 6px; align-items: flex-end; }
+  .row .cap { font-size: 11px; color: #8a8378; width: 34px; flex: none; }
+  .cell { display: grid; place-items: center; border-radius: 4px; }
+  .cell svg { width: 100%; height: 100%; }
+
+  .sil svg { filter: brightness(0); }
+  .gray { filter: grayscale(1); }
+</style>
+</head>
+<body>
+
+<h1>斗兽棋美术选型</h1>
+<p class="sub">
+  每套都按<b>真实尺寸和真实底色</b>呈现，不是放大图 —— 棋子在游戏里最小只有
+  <b>41px</b>（52px 格子 × 0.9 × 0.88）。放大了好看不算数。<br>
+  「剪影」列去掉全部颜色缩到 24px：如果这一列里八只动物分不出来，那这套在小屏幕上就是八个色块。
+</p>
+
+<div class="toolbar">
+  <label><input type="checkbox" id="gray"> 灰度（检查是否只靠颜色区分）</label>
+  <label><input type="checkbox" id="hanzi" checked> 显示汉字</label>
+  <label>棋盘格子
+    <input type="range" id="cell" min="41" max="88" value="52">
+    <span id="cellv">52px</span>
+  </label>
+  <span id="count" style="margin-left:auto;font-size:13px;color:#6b6b6b"></span>
+</div>
+
+<div id="out"></div>
+
+<script src="sets/claude-a.js"></script>
+<script src="sets/claude-b.js"></script>
+<script src="sets/codex.js" onerror="console.warn('codex.js 还没生成')"></script>
+<script src="sets/claude-c.js"></script>
+<script>
+(function () {
+  const SETS = window.SPRITE_SETS || [];
+  const NAME_CN = { rat:'鼠', cat:'猫', dog:'犬', wolf:'狼', leopard:'豹', tiger:'虎', lion:'狮', elephant:'象' };
+  const ANIMALS = ['rat','cat','dog','wolf','leopard','tiger','lion','elephant'];
+  const COLS = 7, ROWS = 9;
+  const idx = (c, r) => r * COLS + c;
+  const isWater = (i) => [1,2,4,5].includes(i % COLS) && [3,4,5].includes(Math.floor(i / COLS));
+  const isCroc = (i) => i === idx(1,4) || i === idx(5,4);
+  const LILY = [idx(2,3), idx(4,3), idx(2,5), idx(4,5)];
+  const TRAP_FOE = [idx(2,0), idx(4,0), idx(3,1)];
+  const TRAP_MINE = [idx(2,8), idx(4,8), idx(3,7)];
+  const DEN_FOE = idx(3,0), DEN_MINE = idx(3,8);
+  // 标准开局
+  const LAYOUT = [
+    [0,0,'lion','foe'], [6,0,'tiger','foe'], [1,1,'dog','foe'], [5,1,'cat','foe'],
+    [0,2,'rat','foe'], [2,2,'leopard','foe'], [4,2,'wolf','foe'], [6,2,'elephant','foe'],
+    [0,6,'elephant','mine'], [2,6,'wolf','mine'], [4,6,'leopard','mine'], [6,6,'rat','mine'],
+    [1,7,'cat','mine'], [5,7,'dog','mine'], [0,8,'tiger','mine'], [6,8,'lion','mine'],
+  ];
+
+  const el = (tag, cls, html) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html !== undefined) n.innerHTML = html;
+    return n;
+  };
+
+  function buildBoard(set, cellPx) {
+    const P = set.palette;
+    const b = el('div', 'board');
+    b.style.gridTemplateColumns = `repeat(${COLS}, ${cellPx}px)`;
+    b.style.background = P.boardEdge;
+    const at = new Map(LAYOUT.map(([c, r, rank, side]) => [idx(c, r), { rank, side }]));
+
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const i = idx(c, r);
+      const sq = el('div', 'sq');
+      sq.style.width = sq.style.height = cellPx + 'px';
+      const alt = (c + r) % 2;
+
+      let bg, art = '';
+      if (isWater(i)) {
+        bg = P.water; sq.classList.add('water');
+        if (isCroc(i)) art = set.sprites.croc;
+        else if (LILY.includes(i)) art = set.sprites.lily;
+      } else if (i === DEN_MINE) { bg = P.denMineBg; art = set.sprites.denMine; }
+      else if (i === DEN_FOE) { bg = P.denFoeBg; art = set.sprites.denFoe; }
+      else if (TRAP_MINE.includes(i) || TRAP_FOE.includes(i)) { bg = P.trapBg; art = set.sprites.trap; }
+      else if (r <= 2) bg = alt ? P.grassFoeAlt : P.grassFoe;
+      else if (r >= 6) bg = alt ? P.grassMineAlt : P.grassMine;
+      else bg = alt ? P.earthAlt : P.earth;
+      sq.style.background = bg;
+      if (art) sq.innerHTML = art;
+
+      const p = at.get(i);
+      if (p) {
+        const card = el('div', 'piece');
+        card.style.background = P.card;
+        card.style.borderColor = p.side === 'mine' ? P.borderMine : P.borderFoe;
+        card.innerHTML = set.sprites[p.rank] +
+          `<span class="nm" style="font-size:${(cellPx * 0.27).toFixed(1)}px;color:${p.side === 'mine' ? P.borderMine : P.borderFoe}">${NAME_CN[p.rank]}</span>`;
+        sq.innerHTML = art;
+        sq.appendChild(card);
+      }
+      b.appendChild(sq);
+    }
+    return b;
+  }
+
+  function sizeRow(set, px, cls) {
+    const row = el('div', 'row');
+    row.appendChild(el('span', 'cap', px + 'px'));
+    for (const a of ANIMALS) {
+      const cell = el('div', 'cell ' + (cls || ''), set.sprites[a]);
+      cell.style.width = cell.style.height = px + 'px';
+      cell.style.background = set.palette.card;
+      cell.title = NAME_CN[a];
+      row.appendChild(cell);
+    }
+    return row;
+  }
+
+  function render() {
+    const out = document.getElementById('out');
+    const cellPx = Number(document.getElementById('cell').value);
+    const gray = document.getElementById('gray').checked;
+    const hanzi = document.getElementById('hanzi').checked;
+    document.getElementById('cellv').textContent = cellPx + 'px';
+    document.getElementById('count').textContent = `共 ${SETS.length} 套`;
+    out.innerHTML = '';
+
+    for (const set of SETS) {
+      const box = el('div', 'set');
+      box.id = 'set-' + set.id;
+
+      const head = el('div', 'set-head');
+      head.appendChild(el('h2', null, set.name));
+      head.appendChild(el('span', 'tag ' + set.author.replace(/\s/g, ''), set.author));
+      head.appendChild(el('span', 'tag', set.id));
+      head.appendChild(el('p', 'note', set.note || ''));
+      const btn = el('button', 'pick', '选这套');
+      btn.onclick = () => {
+        document.querySelectorAll('.set').forEach((n) => n.classList.remove('picked'));
+        box.classList.add('picked');
+        localStorage.setItem('jungle.artPick', set.id);
+        btn.textContent = '已选 ✓';
+        setTimeout(() => { btn.textContent = '选这套'; }, 1400);
+      };
+      head.appendChild(btn);
+      box.appendChild(head);
+
+      const cols = el('div', 'cols');
+
+      const p1 = el('div', 'panel');
+      p1.appendChild(el('h3', null, '真实棋盘 · ' + cellPx + 'px 格'));
+      const board = buildBoard(set, cellPx);
+      if (!hanzi) board.querySelectorAll('.nm').forEach((n) => (n.style.display = 'none'));
+      p1.appendChild(board);
+      cols.appendChild(p1);
+
+      const p2 = el('div', 'panel');
+      p2.appendChild(el('h3', null, '尺寸压力测试'));
+      const sizes = el('div', 'sizes');
+      [70, 52, 41, 32].forEach((px) => sizes.appendChild(sizeRow(set, px)));
+      p2.appendChild(sizes);
+      cols.appendChild(p2);
+
+      const p3 = el('div', 'panel');
+      p3.appendChild(el('h3', null, '剪影 24px · 分得出来吗'));
+      p3.appendChild(sizeRow(set, 24, 'sil'));
+      p3.appendChild(el('h3', null, '灰度 41px'));
+      p3.appendChild(sizeRow(set, 41, 'gray'));
+      cols.appendChild(p3);
+
+      box.appendChild(cols);
+      if (gray) box.style.filter = 'grayscale(1)';
+      out.appendChild(box);
+    }
+
+    const saved = localStorage.getItem('jungle.artPick');
+    if (saved) document.getElementById('set-' + saved)?.classList.add('picked');
+  }
+
+  ['gray', 'hanzi', 'cell'].forEach((id) =>
+    document.getElementById(id).addEventListener('input', render));
+  render();
+})();
+</script>
+</body>
+</html>

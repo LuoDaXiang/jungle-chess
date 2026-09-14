@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-// 这一行让 CI 的「前端构建」job 真的会因为 WASM 接口改坏而失败。
+import { useCallback, useEffect, useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+// 规则全部同步走 WASM：选中棋子要立刻出落点，不能等 IPC。
 import init, {
   cols,
-  rows,
+
   is_water,
   is_croc,
   is_trap_of,
@@ -31,89 +32,167 @@ type MoveOutcome = {
   mutual: boolean;
   outcome: Outcome;
 };
+type ThinkReply = {
+  requestId: number;
+  stale: boolean;
+  mv: { from: number; to: number } | null;
+  depth: number;
+  nodes: number;
+  elapsedMs: number;
+};
+
+const LEVEL_NAMES = ["最简单", "有点难", "很难", "非常难", "最厉害"];
+const SIDE_CN = (s: Side) => (s === "red" ? "你" : "电脑");
+
+function describe(mo: MoveOutcome, from: number, to: number): string {
+  const bits = [`${name_cn(mo.moved.rank)} ${from}→${to}`];
+  if (mo.captured) bits.push(`吃${name_cn(mo.captured.rank)}`);
+  if (mo.mutual) bits.push("同归于尽");
+  if (mo.outcome.kind === "won") bits.push(`${SIDE_CN(mo.outcome.side)}赢了`);
+  if (mo.outcome.kind === "draw") bits.push("和棋");
+  return bits.join(" · ");
+}
 
 function App() {
-  const [ready, setReady] = useState(false);
   const [game, setGame] = useState<Game | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
-  const [log, setLog] = useState<string>("");
+  const [level, setLevel] = useState(2);
+  const [log, setLog] = useState<string[]>([]);
+  const [thinking, setThinking] = useState(false);
+  const [stats, setStats] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  // 防重复：界面持有近期局面指纹，调 AI 时传过去。引擎不存历史，
+  // 这个责任在持有局面的这一侧。
+  // 指纹是 u64 → JS 的 bigint。传给 Tauri 时转字符串，JSON 装不下 BigInt。
+  const avoid = useRef<bigint[]>([]);
+  const reqId = useRef(0);
 
   useEffect(() => {
     init()
-      .then(() => {
-        setReady(true);
-        setGame(create_game() as Game);
-      })
+      .then(() => setGame(create_game() as Game))
       .catch((e: unknown) => setError(String(e)));
   }, []);
 
-  // 落点是同步算出来的——没有 await，没有 IPC，没有等待态。
-  // 这正是规则走 WASM 而不是走 Tauri 后端的全部理由。
-  const targets = useMemo<number[]>(() => {
-    if (!ready || !game || selected === null) return [];
-    return legal_moves_from(game, selected) as number[];
-  }, [ready, game, selected]);
+  const newGame = useCallback(() => {
+    avoid.current = [];
+    reqId.current += 1; // 作废还在路上的搜索
+    setGame(create_game() as Game);
+    setSelected(null);
+    setLog([]);
+    setStats("");
+    setThinking(false);
+  }, []);
 
-  const onCell = useCallback(
-    (i: number) => {
-      if (!game || game.outcome.kind !== "ongoing") return;
-      const p = game.board[i];
-
-      if (selected !== null && targets.includes(i)) {
-        const res = apply_move(game, selected, i) as {
+  const aiTurn = useCallback(
+    async (g: Game) => {
+      if (g.outcome.kind !== "ongoing") return;
+      reqId.current += 1;
+      const myId = reqId.current;
+      setThinking(true);
+      try {
+        const reply = await invoke<ThinkReply>("think", {
+          req: {
+            game: g,
+            level,
+            requestId: myId,
+            avoid: avoid.current.map(String),
+          },
+        });
+        // 悔棋或重开会作废旧请求，过期的回复必须丢掉，
+        // 否则一个三秒前算出的着法会落到已经变了的棋盘上。
+        if (reply.stale || reply.requestId !== reqId.current) return;
+        if (!reply.mv) {
+          setLog((l) => [...l, "电脑没棋可走"]);
+          return;
+        }
+        const res = apply_move(g, reply.mv.from, reply.mv.to) as {
           game: Game;
           outcome: MoveOutcome;
         };
-        const mo = res.outcome;
+        avoid.current = [...avoid.current, position_key(g)].slice(-8);
         setGame(res.game);
-        setSelected(null);
-        setLog(
-          [
-            `${name_cn(mo.moved.rank)} ${selected}→${i}`,
-            mo.captured ? `吃 ${name_cn(mo.captured.rank)}` : null,
-            mo.mutual ? "同归于尽" : null,
-            mo.outcome.kind === "won"
-              ? `${mo.outcome.side === "red" ? "绿方" : "红方"}胜`
-              : mo.outcome.kind === "draw"
-                ? "和棋"
-                : null,
-          ]
-            .filter(Boolean)
-            .join(" · "),
+        setLog((l) => [...l, "电脑：" + describe(res.outcome, reply.mv!.from, reply.mv!.to)]);
+        setStats(`搜到 ${reply.depth} 层 · ${reply.nodes.toLocaleString()} 节点 · ${reply.elapsedMs}ms`);
+      } catch (e) {
+        setError(
+          String(e) +
+            "（AI 是 Tauri 后端命令，必须跑 npm run tauri:dev，纯浏览器里调不到）",
         );
-        return;
+      } finally {
+        setThinking(false);
       }
-
-      setSelected(p && p.side === game.turn ? i : null);
     },
-    [game, selected, targets],
+    [level],
   );
 
-  if (error) return <main className="container">WASM 加载失败：{error}</main>;
+  const onCell = useCallback(
+    (i: number) => {
+      if (!game || thinking || game.outcome.kind !== "ongoing") return;
+      if (game.turn !== "red") return;
+
+      if (selected !== null) {
+        const targets = legal_moves_from(game, selected) as number[];
+        if (targets.includes(i)) {
+          const res = apply_move(game, selected, i) as {
+            game: Game;
+            outcome: MoveOutcome;
+          };
+          avoid.current = [...avoid.current, position_key(game)].slice(-8);
+          setGame(res.game);
+          setSelected(null);
+          setLog((l) => [...l, "你：" + describe(res.outcome, selected, i)]);
+          if (res.game.outcome.kind === "ongoing") void aiTurn(res.game);
+          return;
+        }
+      }
+      const p = game.board[i];
+      setSelected(p && p.side === "red" ? i : null);
+    },
+    [game, selected, thinking, aiTurn],
+  );
+
+  if (error) return <main className="container">出错了：{error}</main>;
   if (!game) return <main className="container">加载引擎…</main>;
 
   const c = cols();
-  const r = rows();
+  const targets =
+    selected === null ? [] : (legal_moves_from(game, selected) as number[]);
+  const over = game.outcome.kind !== "ongoing";
 
   return (
-    <main className="container">
-      <h1>引擎连通性自检</h1>
-      <p>
-        {c}×{r} · {game.board.filter(Boolean).length} 子 ·{" "}
-        {game.outcome.kind === "ongoing"
-          ? `轮到 ${game.turn === "red" ? "绿方" : "红方"}`
-          : game.outcome.kind === "draw"
-            ? "和棋"
-            : `${game.outcome.side === "red" ? "绿方" : "红方"}胜`}
-      </p>
+    <main className="container" style={{ padding: 12 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+        <button onClick={newGame}>重开一局</button>
+        <label>
+          难度{" "}
+          <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
+            {LEVEL_NAMES.map((n, k) => (
+              <option key={k} value={k + 1}>
+                {k + 1} · {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <strong>
+          {over
+            ? game.outcome.kind === "won"
+              ? `${SIDE_CN(game.outcome.side)}赢了`
+              : "和棋"
+            : thinking
+              ? "电脑在想…"
+              : game.turn === "red"
+                ? "该你走"
+                : "…"}
+        </strong>
+      </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${c}, 42px)`,
+          gridTemplateColumns: `repeat(${c}, 46px)`,
           gap: 2,
-          justifyContent: "center",
+          justifyContent: "start",
         }}
       >
         {game.board.map((p, i) => {
@@ -124,20 +203,18 @@ function App() {
             <button
               key={i}
               onClick={() => onCell(i)}
-              title={String(i)}
+              title={`${i} (${i % c},${Math.floor(i / c)})`}
               style={{
-                height: 42,
+                height: 46,
                 padding: 0,
-                cursor: "pointer",
-                fontSize: 16,
+                cursor: over || thinking ? "default" : "pointer",
+                fontSize: 18,
                 fontWeight: 700,
                 borderRadius: 5,
                 border:
-                  selected === i
+                  selected === i || isTarget
                     ? "3px solid #ffc21a"
-                    : isTarget
-                      ? "3px solid #ffc21a"
-                      : "1px solid rgba(0,0,0,.15)",
+                    : "1px solid rgba(0,0,0,.2)",
                 // 地形全部来自 Rust 引擎，前端没有第二份实现
                 background: is_croc(i)
                   ? "#6aa84f"
@@ -157,14 +234,14 @@ function App() {
         })}
       </div>
 
-      <p style={{ fontSize: 13, minHeight: 20 }}>{log}</p>
-      <p style={{ fontSize: 11, opacity: 0.55, fontFamily: "monospace" }}>
-        局面指纹 {position_key(game).toString(16)} · 同步取自引擎，防重复列表用它
+      <p style={{ fontSize: 12, opacity: 0.7, margin: "8px 0 4px" }}>
+        你是绿方（下方），先走。紫=兽穴 金=陷阱 蓝=河 深绿=鳄鱼。{stats}
       </p>
-      <p style={{ fontSize: 12, opacity: 0.7 }}>
-        点自己的棋子看落点。落点由 Rust 引擎经 WASM 同步返回，无 IPC、无等待。
-        这只是连通性自检，不是最终界面。
-      </p>
+      <div style={{ fontSize: 12, fontFamily: "monospace", maxHeight: 180, overflowY: "auto" }}>
+        {log.slice(-25).map((t, k) => (
+          <div key={k}>{t}</div>
+        ))}
+      </div>
     </main>
   );
 }
