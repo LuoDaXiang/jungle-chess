@@ -24,6 +24,30 @@ crates/engine/   规则，唯一实现 ─┬─ 原生 ─→ crates/ai ─→ 
 - **规则只有一份。** 前端和 AI 调的是同一个 crate，不存在两套实现漂移成
   「界面说能走、点下去被拒绝」。
 
+## 电脑对手有多强
+
+原生 Rust 相对旧版 JS 的实测（Intel i5-7500，2017 年 4 核）：
+
+| 局面 | 旧版 JS 层数 | Rust 层数 | 旧版实耗 | Rust 实耗 |
+|---|---:|---:|---:|---:|
+| 开局 | 7 | **8** | 3001ms | 3000ms |
+| 中局 | 8 | **9** | 885ms | 3000ms |
+| 残局 | 8 | **21** | 8ms | 3000ms |
+
+纯速度（固定深度 6，同一算法）：开局 279ms → 80ms，中局 88ms → 23ms，
+约 **3.5 倍节点吞吐**。
+
+但开局只多 1 层——搜索深度是指数增长的，快 3.5 倍通常就换一层。
+**真正的收获在中局和残局**，而且来源不是速度，是解开了旧版的深度封顶：
+旧版第五档硬停在深度 8，残局里 8 毫秒就撞顶，剩下 2.99 秒白白干等。
+
+复现：
+
+```bash
+cargo run --release -p jungle-ai --example bench   # Rust
+node tools/bench-legacy.cjs                        # 旧版 JS 对照
+```
+
 ## 开发
 
 ```bash
@@ -37,6 +61,7 @@ npm run tauri:dev
 ```bash
 npm run test:rust       # Rust 引擎和 AI
 npm run test:legacy     # 旧版 60 个测试，移植的行为基准
+npm run test:diff       # 差分：Rust 引擎 vs 旧 JS 引擎，逐步比对
 ```
 
 `legacy/` 里的旧版是移植的行为基准，CI 持续跑它的测试。它一旦挂了，
