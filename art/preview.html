@@ -93,6 +93,12 @@
   }
   .pool .riv.a { top: 10%; } .pool .riv.b { bottom: 10%; }
   .sq.water { background: transparent !important; z-index: 1; }
+  /* 陷阱上的「陷阱」二字，压在牙齿上方 */
+  .tlab {
+    position: absolute; left: 0; right: 0; top: -2%;
+    text-align: center; font-weight: 800; color: #3a2a08;
+    font-size: var(--label-size); line-height: 1;
+  }
 
   /* 棋子：奶油牌，动物在下、汉字在上。无阴影。 */
   .piece {
@@ -142,7 +148,10 @@
   const COLS = 7, ROWS = 9, idx = (c, r) => r * COLS + c;
   const isWater = (i) => [1,2,4,5].includes(i % COLS) && [3,4,5].includes(Math.floor(i / COLS));
   const isCroc = (i) => i === idx(1,4) || i === idx(5,4);
-  const LILY = [idx(2,3), idx(4,3), idx(2,5), idx(4,5)];
+  // 荷花在各自池子里居中：每池上下各一朵，一朵靠左列一朵靠右列，
+  // 而不是四朵全挤在棋盘中线两侧。靠红方（行 3）的两朵要转 180 度。
+  const LILY = [idx(1,3), idx(5,3), idx(2,5), idx(4,5)];
+  const LILY_FLIP = [idx(1,3), idx(5,3)];   // 行 3 靠近红方
   const TRAPS = [idx(2,0), idx(4,0), idx(3,1), idx(2,8), idx(4,8), idx(3,7)];
   const LAYOUT = [
     [0,0,'lion','foe'],[6,0,'tiger','foe'],[1,1,'dog','foe'],[5,1,'cat','foe'],
@@ -161,12 +170,13 @@
     const i = idx(c, r), sq = el('div', 'sq');
     let bg = '';
     if (isWater(i)) { sq.classList.add('water');
-      if (isCroc(i)) sq.appendChild(terr(A + 'croc.png', 124, 124));
-      else if (LILY.includes(i)) sq.appendChild(terr(A + 'lily.png', 104, 104));
+      // 左边那只鳄鱼转 180，两只头朝向相反
+      if (isCroc(i)) sq.appendChild(terr(A + 'croc.png', 124, 124, i === idx(1,4)));
+      else if (LILY.includes(i)) sq.appendChild(terr(A + 'lily.png', 104, 104, LILY_FLIP.includes(i)));
     } else if (i === idx(3,8)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-mine.png', 92, 100)); }
     else if (i === idx(3,0)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-foe.png', 92, 100, true)); }
     // 陷阱：两边各自朝向自己的兽穴。翻红方（上方）这一侧。
-    else if (TRAPS.includes(i)) { bg = 'var(--trap-bg)'; sq.appendChild(terr(A + 'trap.png', 94, 94, r <= 2)); }
+    else if (TRAPS.includes(i)) { bg = 'var(--trap-bg)'; sq.appendChild(terr(A + 'trap.png', 94, 94, r <= 2, '陷阱')); }
     else if (r <= 2) { bg = 'var(--grass-foe)'; sq.appendChild(deco(A + 'ground-foe.png')); }
     else if (r >= 6) { bg = 'var(--grass-mine)'; sq.appendChild(deco(A + 'ground-mine.png')); }
     else { bg = 'var(--earth)'; sq.appendChild(deco(A + 'ground-earth.png')); }
@@ -184,11 +194,16 @@
     board.appendChild(sq);
   }
 
-  function terr(url, wPct, hPct, flip) {
+  function terr(url, wPct, hPct, flip, label) {
     const d = el('div', 'terr');
     d.style.width = wPct + '%'; d.style.height = hPct + '%';
     d.style.backgroundImage = `url(${url})`;
     if (flip) d.style.transform = 'translate(-50%,-50%) rotate(180deg)';
+    // 文字放在同一个容器里，跟着一起转 —— 每一方读自己那面的字
+    if (label) {
+      const t = el('div', 'tlab'); t.textContent = label;
+      d.appendChild(t);
+    }
     return d;
   }
   function deco(url) {
