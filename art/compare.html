@@ -29,18 +29,20 @@
     box-shadow: inset 0 0 0 3px rgba(255,255,255,.45);
   }
   .pool .grid { position: absolute; inset: 0; }
-  /* 「小河」放右列：鳄鱼固定在左列，参考图里两者也不重叠 */
+  /* 「小」在上、「河」在下，让开中间那行的鳄鱼 —— 参考图就是这么排的 */
   .pool .riv {
-    position: absolute; right: 4%; top: 50%; transform: translateY(-50%);
-    width: 44%; text-align: center; color: #ffffff; font-weight: 800; line-height: 1.02;
-    text-shadow: 0 1px 2px rgba(0,60,80,.35); z-index: 2; pointer-events: none;
+    position: absolute; left: 0; right: 0; text-align: center;
+    color: #ffffff; font-weight: 800; line-height: 1;
+    text-shadow: 0 1px 2px rgba(0,60,80,.35); z-index: 4; pointer-events: none;
   }
+  .pool .riv.a { top: 12%; }
+  .pool .riv.b { bottom: 12%; }
   .sq { z-index: 1; }
   .sq { position: relative; display: grid; place-items: center; border-radius: 9px; }
-  .sq svg { width: 78%; height: 78%; }
-  .sq.water svg { width: 90%; height: 90%; }
+  .sq > svg { position: absolute; left: 11%; top: 11%; width: 78%; height: 78%; }
+  .sq.water > svg { left: 5%; top: 5%; width: 90%; height: 90%; }
   .sq.croc { overflow: visible; z-index: 3; }
-  .sq.croc svg { width: 150%; height: 150%; }
+  .sq.croc > svg { left: 0; top: -24%; width: 148%; height: 148%; }
 
   /* 棋子：奶油圆角牌，动物在左、汉字竖排在右 —— 照参考图的排法 */
   .piece {
@@ -54,9 +56,9 @@
     color: #1a1a1a;                 /* 汉字统一黑色 */
     z-index: 2;
   }
-  /* 红方（敌方）的动物头转 180 度，面朝对面玩家 —— 实体棋盘就是这样摆的。
-     汉字不转，仍然正着读。 */
-  .piece.foe svg { transform: rotate(180deg); }
+  /* 红方整张牌转 180 度 —— 动物和汉字一起转，就像实体棋盘上对面那半边。
+     从我们这一侧看，红方的汉字在下方且是倒的；从对面玩家看则一切正常。 */
+  .piece.foe { transform: rotate(180deg); }
 
   .strip { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
   .one { text-align: center; }
@@ -137,8 +139,8 @@
       else if (i === idx(3,8)) { bg = P.denMineBg; art = set.sprites.denMine; }
       else if (i === idx(3,0)) { bg = P.denFoeBg; art = set.sprites.denFoe; }
       else if (TRAPS.includes(i)) { bg = P.trapBg; art = set.sprites[r >= 6 ? 'trapMine' : 'trapFoe']; }
-      else if (r <= 2) bg = alt ? P.grassFoeAlt : P.grassFoe;
-      else if (r >= 6) bg = alt ? P.grassMineAlt : P.grassMine;
+      else if (r <= 2) { bg = alt ? P.grassFoeAlt : P.grassFoe; art = set.sprites.tuftFoe; }
+      else if (r >= 6) { bg = alt ? P.grassMineAlt : P.grassMine; art = set.sprites.tuftMine; }
       else { bg = alt ? P.earthAlt : P.earth; art = set.sprites['wood' + ((c + r) % 3)]; }
       sq.style.background = bg;
       sq.innerHTML = art;
@@ -171,10 +173,12 @@
         `<path d="M10 ${px + 3} H${W - 10} M10 ${2 * px + 6} H${W - 10}" stroke="#0e5f77"
            stroke-width="3.5" stroke-dasharray="9 7" opacity=".55"/>` +
         `</svg>`));
-      // 两池都写「小河」，竖着排
-      const t = el('div', 'riv', '小<br>河');
-      t.style.fontSize = (px * 0.34).toFixed(1) + 'px';
-      pool.appendChild(t);
+      // 两池都写「小河」：小在上、河在下
+      for (const [ch, cls] of [['小', 'a'], ['河', 'b']]) {
+        const t = el('div', 'riv ' + cls, ch);
+        t.style.fontSize = (px * 0.34).toFixed(1) + 'px';
+        pool.appendChild(t);
+      }
       b.appendChild(pool);
     }
     return b;

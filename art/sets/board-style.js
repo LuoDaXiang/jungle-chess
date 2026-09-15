@@ -48,6 +48,14 @@
   const innerEar = (x, y, rx, ry, rot) =>
     `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${PINK}" transform="rotate(${rot || 0} ${x} ${y})"/>`;
 
+  /* 小草：亮黄绿三叉嫩芽，照参考图长在兽穴格的角上 */
+  const sprout = (x, y, sc, flip) =>
+    `<g transform="translate(${x} ${y}) scale(${flip ? -sc : sc} ${sc})">` +
+    `<path d="M0 0 q-2 -14 -9 -20" stroke="#c6e83a" stroke-width="7" fill="none" stroke-linecap="round"/>` +
+    `<path d="M0 0 q0 -16 0 -24" stroke="#c6e83a" stroke-width="7" fill="none" stroke-linecap="round"/>` +
+    `<path d="M0 0 q2 -14 9 -20" stroke="#c6e83a" stroke-width="7" fill="none" stroke-linecap="round"/>` +
+    `</g>`;
+
   // ---------- 八只动物，每只自己的头轮廓 ----------
   // 左右轻微不对称是故意的：参考图的耳朵和斑点都不完全镜像，
   // 那是「手工玩具」而不是「图标生成器」的来源。
@@ -181,24 +189,21 @@
       /* 鳄鱼照参考图重画：大头在右、眼睛长在头顶、粉色嘴、两颗白牙、尾部黄刺。
          第一版是个扁长条加两只小眼，头完全没做出来。 */
       croc: svg(
-        // 尾部黄刺
-        `<path d="M6 54 h8 v9 h-8 Z M6 66 h8 v9 h-8 Z M6 78 h7 v8 h-7 Z" fill="#f2c72e"/>` +
-        // 身体/尾巴
-        `<rect x="10" y="56" width="46" height="20" rx="9" fill="#1d7a8c"/>` +
-        // 大头
-        `<path d="M40 34 q34 0 44 12 q8 10 -2 16 l-42 0 q-10 -8 -8 -16 q2 -12 8 -12 Z" fill="#1d7a8c"/>` +
-        // 下颚
-        `<path d="M44 62 q30 2 44 -2 q4 8 -4 12 l-36 0 q-6 -4 -4 -10 Z" fill="#15606f"/>` +
-        // 粉色嘴
-        `<ellipse cx="78" cy="59" rx="9" ry="5" fill="#e8457a"/>` +
-        // 两颗白牙
-        `<path d="M52 62 l5 9 l5 -9 Z M62 62 l5 9 l5 -9 Z" fill="#ffffff"/>` +
-        // 眼睛长在头顶，两只大白眼
-        `<circle cx="62" cy="34" r="10" fill="#eef7fa"/><circle cx="80" cy="35" r="10" fill="#eef7fa"/>` +
-        `<path d="M54 32 q8 -6 16 0" stroke="#15606f" stroke-width="4" fill="none" stroke-linecap="round"/>` +
-        `<circle cx="62" cy="36" r="4" fill="#15303a"/><circle cx="80" cy="37" r="4" fill="#15303a"/>` +
-        // 鼻孔
-        `<circle cx="30" cy="44" r="3.4" fill="#15303a"/><circle cx="39" cy="43" r="3.4" fill="#15303a"/>`),
+        // 右侧是宽厚的头身，长吻朝左平伸；最右一排黄背刺露出水面。
+        `<path d="M87 43 l8 4 l-8 7 l9 5 l-9 7 l8 6 l-10 5 Z" fill="#f2c72e"/>` +
+        `<path d="M53 30 C72 27 89 38 89 55 L89 78 L24 78 C13 78 7 72 7 63 C7 58 10 55 16 53 L8 49 C4 47 4 41 7 36 C10 31 15 28 22 28 C31 28 39 33 47 37 C47 34 49 32 53 30 Z" fill="#177b8b"/>` +
+        // 张开的嘴缝把长吻和下颚分开，缩到棋盘格尺寸仍然清楚。
+        `<path d="M9 53 C28 53 49 56 70 60 L86 61 L86 72 C68 72 45 70 23 69 C14 69 9 64 9 58 Z" fill="#0d5969"/>` +
+        `<path d="M13 54 C34 54 54 57 73 61 C51 61 31 60 13 60 Z" fill="#f7fbef"/>` +
+        `<path d="M19 53 l5 10 l5 -9 Z M31 55 l5 9 l5 -8 Z" fill="#ffffff"/>` +
+        // 参考实物的粉红口腔色块位于大头后侧。
+        `<ellipse cx="76" cy="58" rx="10" ry="7" fill="#e64571" stroke="#a72f5b" stroke-width="4"/>` +
+        // 两只大眼球从头顶凸起，瞳孔向下，形成原图里慵懒的神态。
+        `<circle cx="60" cy="34" r="12" fill="#f4f2eb" stroke="#126779" stroke-width="4"/>` +
+        `<circle cx="80" cy="35" r="12" fill="#f4f2eb" stroke="#126779" stroke-width="4"/>` +
+        `<path d="M52 35 q8 11 16 0 M72 36 q8 11 16 0" fill="none" stroke="#172b38" stroke-width="6" stroke-linecap="round"/>` +
+        // 吻端双鼻孔。
+        `<circle cx="17" cy="37" r="4" fill="#172b38"/><circle cx="28" cy="38" r="4" fill="#172b38"/>`),
 
       lily: svg(
         `<circle cx="50" cy="50" r="33" fill="#a8cc42"/>` +
@@ -226,21 +231,31 @@
         `<circle cx="50" cy="80" r="8" fill="#6f767e"/>` +
         `</g>`),
 
-      /* 兽穴照参考图：拱门 + 白色十字窗 + 四角草叶，门色分敌我 */
+      /* 兽穴照参考图：拱门 + 白色十字窗 + 两角三叉嫩芽。
+         敌方那座整体转 180 度，门口朝向对面玩家。 */
       denMine: svg(
-        `<path d="M8 26 q6 16 2 30 M92 26 q-6 16 -2 30" stroke="#0a6275" stroke-width="6" fill="none" stroke-linecap="round"/>` +
+        `<path d="M22 84 q-6 -20 -4 -34 M78 84 q6 -20 4 -34" stroke="#0a6275" stroke-width="5" fill="none" stroke-linecap="round"/>` +
         `<path d="M50 12 q26 0 26 28 L76 90 L24 90 L24 40 q0 -28 26 -28 Z" fill="#9ec72e"/>` +
         `<path d="M50 12 v78" stroke="#7fa81f" stroke-width="4"/>` +
         `<circle cx="50" cy="48" r="16" fill="#fdfaf0"/>` +
         `<path d="M50 32 v32 M34 48 h32" stroke="#9ec72e" stroke-width="5"/>` +
-        `<path d="M10 78 q8 -12 6 -22 M90 78 q-8 -12 -6 -22" stroke="#b8e04a" stroke-width="7" fill="none" stroke-linecap="round"/>`),
+        sprout(14, 46, 1.0) + sprout(86, 44, 1.0, true) +
+        sprout(10, 88, 0.8) + sprout(90, 88, 0.8, true)),
       denFoe: svg(
-        `<path d="M8 26 q6 16 2 30 M92 26 q-6 16 -2 30" stroke="#0a6275" stroke-width="6" fill="none" stroke-linecap="round"/>` +
+        `<g transform="rotate(180 50 50)">` +
+        `<path d="M22 84 q-6 -20 -4 -34 M78 84 q6 -20 4 -34" stroke="#0a6275" stroke-width="5" fill="none" stroke-linecap="round"/>` +
         `<path d="M50 12 q26 0 26 28 L76 90 L24 90 L24 40 q0 -28 26 -28 Z" fill="#e0245e"/>` +
         `<path d="M50 12 v78" stroke="#bb1a4c" stroke-width="4"/>` +
         `<circle cx="50" cy="48" r="16" fill="#fdfaf0"/>` +
         `<path d="M50 32 v32 M34 48 h32" stroke="#e0245e" stroke-width="5"/>` +
-        `<path d="M10 78 q8 -12 6 -22 M90 78 q-8 -12 -6 -22" stroke="#b8e04a" stroke-width="7" fill="none" stroke-linecap="round"/>`),
+        sprout(14, 46, 1.0) + sprout(86, 44, 1.0, true) +
+        sprout(10, 88, 0.8) + sprout(90, 88, 0.8, true) +
+        `</g>`),
+
+      /* 空格子上的小点缀：同色系稍深的两个小椭圆，很淡。
+         参考图的空粉格和空绿格上就是这个。 */
+      tuftMine: svg(`<ellipse cx="38" cy="26" rx="11" ry="6" fill="#98b52c" opacity=".7"/><ellipse cx="60" cy="34" rx="7" ry="4.5" fill="#98b52c" opacity=".7"/>`),
+      tuftFoe: svg(`<ellipse cx="38" cy="26" rx="11" ry="6" fill="#c4304f" opacity=".7"/><ellipse cx="60" cy="34" rx="7" ry="4.5" fill="#c4304f" opacity=".7"/>`),
 
       /* 橙格木纹，三种变体轮换 —— 每格一样会露出机械感 */
       wood0: svg(`<path d="M8 30 q42 -10 84 4 M6 58 q46 12 88 -4" stroke="#d1691f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="66" cy="74" rx="9" ry="5" fill="none" stroke="#d1691f" stroke-width="4"/>`),
