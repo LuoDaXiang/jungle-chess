@@ -29,3 +29,7 @@ crates/engine-wasm/pkg/
 
 # 参考照片是别人商品的美术，只在本地对比用，不入库
 art/_ref_local.*
+
+# 生成素材的中间产物：chroma 底图和 1254px 原图太重，只提交裁剪缩放后的成品
+art/generated/styleA/chroma/
+art/generated/samples/chroma/
