@@ -178,15 +178,27 @@
     sprites: {
       rat, cat, dog, wolf, leopard, tiger, lion, elephant,
 
+      /* 鳄鱼照参考图重画：大头在右、眼睛长在头顶、粉色嘴、两颗白牙、尾部黄刺。
+         第一版是个扁长条加两只小眼，头完全没做出来。 */
       croc: svg(
-        `<ellipse cx="50" cy="62" rx="43" ry="13" fill="#4aa83f"/>` +
-        `<path d="M8 50 l9 -9 l9 9 l9 -9 l9 9" stroke="#3a8c31" stroke-width="6" fill="none" stroke-linejoin="round"/>` +
-        `<ellipse cx="70" cy="63" rx="26" ry="12" fill="#5cbd4c"/>` +
-        `<circle cx="63" cy="47" r="9" fill="#5cbd4c"/><circle cx="82" cy="46" r="9" fill="#5cbd4c"/>` +
-        `<circle cx="63" cy="47" r="4.5" fill="#fff"/><circle cx="82" cy="46" r="4.5" fill="#fff"/>` +
-        `<circle cx="63" cy="48" r="2.4" fill="${INK}"/><circle cx="82" cy="47" r="2.4" fill="${INK}"/>` +
-        // 牙齿减到三颗大三角，52px 水格里不再拥挤
-        `<path d="M50 68 l7 8 l7 -8 l7 8 l7 -8" stroke="#fff" stroke-width="5" fill="none" stroke-linejoin="round"/>`),
+        // 尾部黄刺
+        `<path d="M6 54 h8 v9 h-8 Z M6 66 h8 v9 h-8 Z M6 78 h7 v8 h-7 Z" fill="#f2c72e"/>` +
+        // 身体/尾巴
+        `<rect x="10" y="56" width="46" height="20" rx="9" fill="#1d7a8c"/>` +
+        // 大头
+        `<path d="M40 34 q34 0 44 12 q8 10 -2 16 l-42 0 q-10 -8 -8 -16 q2 -12 8 -12 Z" fill="#1d7a8c"/>` +
+        // 下颚
+        `<path d="M44 62 q30 2 44 -2 q4 8 -4 12 l-36 0 q-6 -4 -4 -10 Z" fill="#15606f"/>` +
+        // 粉色嘴
+        `<ellipse cx="78" cy="59" rx="9" ry="5" fill="#e8457a"/>` +
+        // 两颗白牙
+        `<path d="M52 62 l5 9 l5 -9 Z M62 62 l5 9 l5 -9 Z" fill="#ffffff"/>` +
+        // 眼睛长在头顶，两只大白眼
+        `<circle cx="62" cy="34" r="10" fill="#eef7fa"/><circle cx="80" cy="35" r="10" fill="#eef7fa"/>` +
+        `<path d="M54 32 q8 -6 16 0" stroke="#15606f" stroke-width="4" fill="none" stroke-linecap="round"/>` +
+        `<circle cx="62" cy="36" r="4" fill="#15303a"/><circle cx="80" cy="37" r="4" fill="#15303a"/>` +
+        // 鼻孔
+        `<circle cx="30" cy="44" r="3.4" fill="#15303a"/><circle cx="39" cy="43" r="3.4" fill="#15303a"/>`),
 
       lily: svg(
         `<circle cx="50" cy="50" r="33" fill="#a8cc42"/>` +
@@ -196,13 +208,23 @@
 
       /* 陷阱照参考图：灰色 V 形夹口 + 白色尖齿 + 橙色诱饵条 + 两侧墨绿草叶 + 底部圆压盘。
          第一版画成上下对咬的齿列，是凭印象编的。 */
-      trap: svg(
+      trapFoe: svg(
         `<path d="M14 62 q6 -12 10 -22 M86 62 q-6 -12 -10 -22" stroke="#1d7a72" stroke-width="7" fill="none" stroke-linecap="round"/>` +
         `<path d="M10 52 q8 -6 12 -16 M90 52 q-8 -6 -12 -16" stroke="#1d7a72" stroke-width="6" fill="none" stroke-linecap="round"/>` +
         `<path d="M18 26 L82 26 L64 72 L36 72 Z" fill="#8d949c"/>` +
         `<path d="M24 38 l7 12 l6 -12 l7 12 l6 -12 l7 12 l6 -12 l7 12 l5 -12 Z" fill="#ffffff"/>` +
         `<rect x="44" y="32" width="12" height="36" rx="6" fill="#e8622c"/>` +
         `<circle cx="50" cy="80" r="8" fill="#6f767e"/>`),
+      // 我方（绿营）的陷阱转 180 度，夹口朝向自己这边
+      trapMine: svg(
+        `<g transform="rotate(180 50 50)">` +
+        `<path d="M14 62 q6 -12 10 -22 M86 62 q-6 -12 -10 -22" stroke="#1d7a72" stroke-width="7" fill="none" stroke-linecap="round"/>` +
+        `<path d="M10 52 q8 -6 12 -16 M90 52 q-8 -6 -12 -16" stroke="#1d7a72" stroke-width="6" fill="none" stroke-linecap="round"/>` +
+        `<path d="M18 26 L82 26 L64 72 L36 72 Z" fill="#8d949c"/>` +
+        `<path d="M24 38 l7 12 l6 -12 l7 12 l6 -12 l7 12 l6 -12 l7 12 l5 -12 Z" fill="#ffffff"/>` +
+        `<rect x="44" y="32" width="12" height="36" rx="6" fill="#e8622c"/>` +
+        `<circle cx="50" cy="80" r="8" fill="#6f767e"/>` +
+        `</g>`),
 
       /* 兽穴照参考图：拱门 + 白色十字窗 + 四角草叶，门色分敌我 */
       denMine: svg(
