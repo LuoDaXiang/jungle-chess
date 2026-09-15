@@ -216,44 +216,40 @@
       trapFoe: svg(
         `<path d="M14 62 q6 -12 10 -22 M86 62 q-6 -12 -10 -22" stroke="#1d7a72" stroke-width="7" fill="none" stroke-linecap="round"/>` +
         `<path d="M10 52 q8 -6 12 -16 M90 52 q-8 -6 -12 -16" stroke="#1d7a72" stroke-width="6" fill="none" stroke-linecap="round"/>` +
-        `<path d="M18 34 L82 34 L64 78 L36 78 Z" fill="#8d949c"/>` +
-        `<path d="M24 46 l7 12 l6 -12 l7 12 l6 -12 l7 12 l6 -12 l7 12 l5 -12 Z" fill="#ffffff"/>` +
-        `<rect x="44" y="40" width="12" height="36" rx="6" fill="#e8622c"/>` +
-        `<circle cx="50" cy="86" r="7" fill="#6f767e"/>` +
-        `<text x="50" y="24" font-size="22" font-weight="800" text-anchor="middle" fill="#3a2a08" font-family="PingFang SC,Microsoft YaHei,sans-serif">陷阱</text>`),
+        `<path d="M18 26 L82 26 L64 72 L36 72 Z" fill="#8d949c"/>` +
+        `<path d="M24 38 l7 12 l6 -12 l7 12 l6 -12 l7 12 l6 -12 l7 12 l5 -12 Z" fill="#ffffff"/>` +
+        `<rect x="44" y="32" width="12" height="36" rx="6" fill="#e8622c"/>` +
+        `<circle cx="50" cy="80" r="8" fill="#6f767e"/>`),
       // 我方（绿营）的陷阱转 180 度，夹口朝向自己这边
       trapMine: svg(
         `<g transform="rotate(180 50 50)">` +
         `<path d="M14 62 q6 -12 10 -22 M86 62 q-6 -12 -10 -22" stroke="#1d7a72" stroke-width="7" fill="none" stroke-linecap="round"/>` +
         `<path d="M10 52 q8 -6 12 -16 M90 52 q-8 -6 -12 -16" stroke="#1d7a72" stroke-width="6" fill="none" stroke-linecap="round"/>` +
-        `<path d="M18 34 L82 34 L64 78 L36 78 Z" fill="#8d949c"/>` +
-        `<path d="M24 46 l7 12 l6 -12 l7 12 l6 -12 l7 12 l6 -12 l7 12 l5 -12 Z" fill="#ffffff"/>` +
-        `<rect x="44" y="40" width="12" height="36" rx="6" fill="#e8622c"/>` +
-        `<circle cx="50" cy="86" r="7" fill="#6f767e"/>` +
-        `<text x="50" y="24" font-size="22" font-weight="800" text-anchor="middle" fill="#3a2a08" font-family="PingFang SC,Microsoft YaHei,sans-serif">陷阱</text>` +
+        `<path d="M18 26 L82 26 L64 72 L36 72 Z" fill="#8d949c"/>` +
+        `<path d="M24 38 l7 12 l6 -12 l7 12 l6 -12 l7 12 l6 -12 l7 12 l5 -12 Z" fill="#ffffff"/>` +
+        `<rect x="44" y="32" width="12" height="36" rx="6" fill="#e8622c"/>` +
+        `<circle cx="50" cy="80" r="8" fill="#6f767e"/>` +
         `</g>`),
 
       /* 兽穴照参考图：拱门 + 白色十字窗 + 两角三叉嫩芽。
          敌方那座整体转 180 度，门口朝向对面玩家。 */
       denMine: svg(
         `<path d="M22 84 q-6 -20 -4 -34 M78 84 q6 -20 4 -34" stroke="#0a6275" stroke-width="5" fill="none" stroke-linecap="round"/>` +
-        `<path d="M50 30 q24 0 24 26 L74 92 L26 92 L26 56 q0 -26 24 -26 Z" fill="#9ec72e"/>` +
-        `<path d="M50 30 v62" stroke="#7fa81f" stroke-width="4"/>` +
-        `<circle cx="50" cy="62" r="14" fill="#fdfaf0"/>` +
-        `<path d="M50 48 v28 M36 62 h28" stroke="#9ec72e" stroke-width="5"/>` +
+        `<path d="M50 12 q26 0 26 28 L76 90 L24 90 L24 40 q0 -28 26 -28 Z" fill="#9ec72e"/>` +
+        `<path d="M50 12 v78" stroke="#7fa81f" stroke-width="4"/>` +
+        `<circle cx="50" cy="48" r="16" fill="#fdfaf0"/>` +
+        `<path d="M50 32 v32 M34 48 h32" stroke="#9ec72e" stroke-width="5"/>` +
         sprout(14, 46, 1.0) + sprout(86, 44, 1.0, true) +
-        sprout(10, 88, 0.8) + sprout(90, 88, 0.8, true) +
-        `<text x="50" y="22" font-size="22" font-weight="800" text-anchor="middle" fill="#eaf7fa" font-family="PingFang SC,Microsoft YaHei,sans-serif">兽穴</text>`),
+        sprout(10, 88, 0.8) + sprout(90, 88, 0.8, true)),
       denFoe: svg(
         `<g transform="rotate(180 50 50)">` +
         `<path d="M22 84 q-6 -20 -4 -34 M78 84 q6 -20 4 -34" stroke="#0a6275" stroke-width="5" fill="none" stroke-linecap="round"/>` +
-        `<path d="M50 30 q24 0 24 26 L74 92 L26 92 L26 56 q0 -26 24 -26 Z" fill="#e0245e"/>` +
-        `<path d="M50 30 v62" stroke="#bb1a4c" stroke-width="4"/>` +
-        `<circle cx="50" cy="62" r="14" fill="#fdfaf0"/>` +
-        `<path d="M50 48 v28 M36 62 h28" stroke="#e0245e" stroke-width="5"/>` +
+        `<path d="M50 12 q26 0 26 28 L76 90 L24 90 L24 40 q0 -28 26 -28 Z" fill="#e0245e"/>` +
+        `<path d="M50 12 v78" stroke="#bb1a4c" stroke-width="4"/>` +
+        `<circle cx="50" cy="48" r="16" fill="#fdfaf0"/>` +
+        `<path d="M50 32 v32 M34 48 h32" stroke="#e0245e" stroke-width="5"/>` +
         sprout(14, 46, 1.0) + sprout(86, 44, 1.0, true) +
         sprout(10, 88, 0.8) + sprout(90, 88, 0.8, true) +
-        `<text x="50" y="22" font-size="22" font-weight="800" text-anchor="middle" fill="#eaf7fa" font-family="PingFang SC,Microsoft YaHei,sans-serif">兽穴</text>` +
         `</g>`),
 
       /* 空格子上的小点缀：同色系稍深的两个小椭圆，很淡。
@@ -262,10 +258,9 @@
       tuftFoe: svg(`<ellipse cx="38" cy="26" rx="11" ry="6" fill="#c4304f" opacity=".7"/><ellipse cx="60" cy="34" rx="7" ry="4.5" fill="#c4304f" opacity=".7"/>`),
 
       /* 橙格木纹，三种变体轮换 —— 每格一样会露出机械感 */
-      // 参考图的木纹是一眼能看见的纹理，不是若隐若现。加深加粗加条数。
-      wood0: svg(`<path d="M2 22 q46 -12 96 6 M0 46 q48 16 100 -6 M2 70 q46 -12 96 8 M0 90 q48 12 100 -6" stroke="#b4541a" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="68" cy="58" rx="11" ry="6" fill="none" stroke="#b4541a" stroke-width="5"/>`),
-      wood1: svg(`<path d="M0 18 q50 16 100 -4 M2 44 q46 -14 96 8 M0 68 q50 14 100 -6 M2 92 q46 -12 96 6" stroke="#b4541a" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="32" rx="10" ry="6" fill="none" stroke="#b4541a" stroke-width="5"/>`),
-      wood2: svg(`<path d="M2 14 q46 14 96 -4 M0 38 q50 -14 100 6 M2 62 q46 16 96 -4 M0 86 q50 -12 100 8" stroke="#b4541a" stroke-width="6" fill="none" stroke-linecap="round"/>`),
+      wood0: svg(`<path d="M8 30 q42 -10 84 4 M6 58 q46 12 88 -4" stroke="#d1691f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="66" cy="74" rx="9" ry="5" fill="none" stroke="#d1691f" stroke-width="4"/>`),
+      wood1: svg(`<path d="M6 42 q44 14 88 -6 M10 72 q40 -12 80 2" stroke="#d1691f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="22" rx="8" ry="5" fill="none" stroke="#d1691f" stroke-width="4"/>`),
+      wood2: svg(`<path d="M4 24 q48 16 92 -2 M8 54 q42 -14 84 6 M6 82 q46 10 88 -6" stroke="#d1691f" stroke-width="5" fill="none" stroke-linecap="round"/>`),
     },
   };
 

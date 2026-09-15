@@ -21,11 +21,6 @@
   .col > .cap { font-size: 13px; color: #6b6b6b; margin-bottom: 6px; font-weight: 700; }
   img.ref { width: 640px; max-width: 92vw; border-radius: 10px; display: block; }
 
-
-  /* 外框装饰。参考图四周有鳄鱼、波浪花边和小脸 —— 没有这一圈，
-     棋盘就从「儿童玩具」退回「UI 网格」。这是两张并排看时最大的单项差距。 */
-  .frame { position: relative; display: inline-block; border-radius: 18px; padding: 0; }
-  .frame > .deco { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
   .board { display: grid; gap: 3px; padding: 6px; border-radius: 10px; position: relative; }
   /* 连成一片的河。第一版能看见 12 个独立蓝格，参考图读起来是两片池塘 ——
      这改变的是棋盘的空间结构，不只是装饰。 */
@@ -83,9 +78,6 @@
 <h1>对照实体棋盘</h1>
 <p class="sub">
   左边是你给的实体棋盘（<b>本地文件，不入库</b> —— 那是别人商品的美术，公开仓库里不该有）。<br>
-  <b>工作方式：每改一轮，先在这一页把两张并排看过，再报给你。</b>
-  之前我是凭对参考图的记忆改，改完才看 —— 缺外框、缺「陷阱/兽穴」四个字、木纹太淡，
-  都是一直在图里、我却没发现的。<br>
   右边是<b>第二版</b>：拆掉了第一版的统一脸模（八只共用一张脸换耳朵），现在每只有自己的头轮廓和口鼻区。
   象补了鼻子（第一版漏了，缩小后像蓝熊），狮的鬃毛改成 14 个毛瓣（原来用虚线描边，缩小像齿轮），
   「工」字鼻换成鼻块加嘴弧。<b>汉字移到头顶</b>，河连成两片，橙格上了木纹，陷阱和兽穴照参考图重画。
@@ -175,11 +167,11 @@
       pool.appendChild(el('div', 'grid',
         `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">` +
         `<rect x="5" y="5" width="${W - 10}" height="${H - 10}" rx="8" fill="none"
-           stroke="#ffffff" stroke-width="2.6" stroke-dasharray="9 7" opacity=".8"/>` +
-        `<path d="M${px + 1.5} 10 V${H - 10}" stroke="#ffffff" stroke-width="2.6"
-           stroke-dasharray="9 7" opacity=".8"/>` +
-        `<path d="M10 ${px + 3} H${W - 10} M10 ${2 * px + 6} H${W - 10}" stroke="#ffffff"
-           stroke-width="2.6" stroke-dasharray="9 7" opacity=".8"/>` +
+           stroke="#0e5f77" stroke-width="3.5" stroke-dasharray="9 7" opacity=".55"/>` +
+        `<path d="M${px + 1.5} 10 V${H - 10}" stroke="#0e5f77" stroke-width="3.5"
+           stroke-dasharray="9 7" opacity=".55"/>` +
+        `<path d="M10 ${px + 3} H${W - 10} M10 ${2 * px + 6} H${W - 10}" stroke="#0e5f77"
+           stroke-width="3.5" stroke-dasharray="9 7" opacity=".55"/>` +
         `</svg>`));
       // 两池都写「小河」：小在上、河在下
       for (const [ch, cls] of [['小', 'a'], ['河', 'b']]) {
@@ -192,49 +184,7 @@
     return b;
   }
 
-  function framed(px) {
-    const f = el('div', 'frame');
-    const pad = Math.round(px * 0.85);          // 外框宽度约 0.85 格，容得下装饰鳄鱼
-    f.style.background = P.boardEdge;
-    f.style.padding = pad + 'px';
-    const b = board(px);
-    f.appendChild(b);
-    const W = COLS * px + (COLS - 1) * 3 + 12 + pad * 2;
-    const H = ROWS * px + (ROWS - 1) * 3 + 12 + pad * 2;
-
-    // 外框鳄鱼直接复用水里那只 —— 我手画的一版缩成了绿色细条，
-    // 而 codex 那只已经验证过在小尺寸下读得出来，没理由再画一遍。
-    const gatorSize = pad;                      // 和框带同宽，不会探出去被裁掉
-    const gator = (x, y, rot) =>
-      `<g transform="translate(${x} ${y}) rotate(${rot})">` +
-      `<svg x="${-gatorSize / 2}" y="${-gatorSize / 2}" width="${gatorSize}" height="${gatorSize}" viewBox="0 0 100 100">` +
-      set.sprites.croc.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
-      `</svg></g>`;
-
-    // 波浪齿边：沿四边一圈半圆
-    let wave = '';
-    const r = Math.round(px * 0.11);
-    for (let x = r; x < W - r; x += r * 2) {
-      wave += `<circle cx="${x}" cy="${r * 0.55}" r="${r}" fill="#2aa3bb"/>`;
-      wave += `<circle cx="${x}" cy="${H - r * 0.55}" r="${r}" fill="#2aa3bb"/>`;
-    }
-    for (let y = r; y < H - r; y += r * 2) {
-      wave += `<circle cx="${r * 0.55}" cy="${y}" r="${r}" fill="#2aa3bb"/>`;
-      wave += `<circle cx="${W - r * 0.55}" cy="${y}" r="${r}" fill="#2aa3bb"/>`;
-    }
-
-    const deco = el('div', 'deco',
-      `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">` + wave +
-      gator(W * 0.32, pad / 2, 0) + gator(W * 0.68, pad / 2, 0) +
-      gator(W * 0.32, H - pad / 2, 180) + gator(W * 0.68, H - pad / 2, 180) +
-      gator(pad / 2, H * 0.34, 90) + gator(pad / 2, H * 0.66, 90) +
-      gator(W - pad / 2, H * 0.34, -90) + gator(W - pad / 2, H * 0.66, -90) +
-      `</svg>`);
-    f.appendChild(deco);
-    return f;
-  }
-
-  document.getElementById('board52').appendChild(framed(52));
+  document.getElementById('board52').appendChild(board(52));
 
   const big = document.getElementById('big');
   for (const a of ANIMALS) {
