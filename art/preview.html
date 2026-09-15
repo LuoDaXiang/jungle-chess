@@ -78,6 +78,12 @@
     position: absolute; inset: 0;
     background-repeat: repeat; background-size: 50% auto; opacity: .5;
   }
+  /* codex 画的虚线网格，2 列 3 行。整张拉伸铺满 —— 它的线就画在
+     50% / 33.3% / 66.7% 上，所以拉伸后正好落在真实格线位置。 */
+  .pool .grid {
+    position: absolute; inset: 0;
+    background-repeat: no-repeat; background-size: 100% 100%;
+  }
   .pool .riv {
     position: absolute; left: 0; right: 0; text-align: center;
     color: #fff; font-weight: 800; font-size: var(--river-text); line-height: 1;
@@ -92,7 +98,7 @@
   }
   .piece .an {
     position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
-    width: 92%; height: 78%;
+    width: 96%; height: 84%;
     background-repeat: no-repeat; background-position: bottom center;
     background-size: contain;
   }
@@ -152,12 +158,12 @@
     const i = idx(c, r), sq = el('div', 'sq');
     let bg = '';
     if (isWater(i)) { sq.classList.add('water');
-      if (isCroc(i)) sq.appendChild(terr(A + 'croc.png', 112, 112));
-      else if (LILY.includes(i)) sq.appendChild(terr(A + 'lily.png', 54, 54));
-    } else if (i === idx(3,8)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-mine.png', 62, 86)); }
-    else if (i === idx(3,0)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-foe.png', 62, 86, true)); }
-    // 绿方（下方）的陷阱转 180 度，夹口朝向自己这边
-    else if (TRAPS.includes(i)) { bg = 'var(--trap-bg)'; sq.appendChild(terr(A + 'trap.png', 72, 72, r >= 6)); }
+      if (isCroc(i)) sq.appendChild(terr(A + 'croc.png', 124, 124));
+      else if (LILY.includes(i)) sq.appendChild(terr(A + 'lily.png', 84, 84));
+    } else if (i === idx(3,8)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-mine.png', 92, 100)); }
+    else if (i === idx(3,0)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-foe.png', 92, 100, true)); }
+    // 陷阱：两边各自朝向自己的兽穴。翻红方（上方）这一侧。
+    else if (TRAPS.includes(i)) { bg = 'var(--trap-bg)'; sq.appendChild(terr(A + 'trap.png', 94, 94, r <= 2)); }
     else if (r <= 2) { bg = 'var(--grass-foe)'; sq.appendChild(deco(A + 'ground-foe.png')); }
     else if (r >= 6) { bg = 'var(--grass-mine)'; sq.appendChild(deco(A + 'ground-mine.png')); }
     else { bg = 'var(--earth)'; sq.appendChild(deco(A + 'ground-earth.png')); }
@@ -201,6 +207,8 @@
       pool.style.height = (3 * ch + 2 * gap) + 'px';
       const w = el('div', 'wav'); w.style.backgroundImage = `url(${A}river.png)`;
       pool.appendChild(w);
+      const g = el('div', 'grid'); g.style.backgroundImage = `url(${A}river-grid.png)`;
+      pool.appendChild(g);
       for (const [ch2, cls] of [['小','a'], ['河','b']]) {
         const t = el('div', 'riv ' + cls); t.textContent = ch2; pool.appendChild(t);
       }
