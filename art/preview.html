@@ -18,9 +18,12 @@
     --cell-radius: calc(var(--cell-h) * 8 / 52);
     --board-frame: calc(var(--cell-h) * 20 / 52);
 
-    --piece-w: calc(var(--cell-w) * 60 / 70);
-    --piece-h: calc(var(--cell-h) * 44 / 52);
-    --piece-radius: calc(var(--cell-h) * 7 / 52);
+    /* 棋子牌扩到格子的 ~92%，只留 3px 领地色「地形缝」。
+       圆角从 7 收到 4：按钮感主要来自「粗留白 + 独立描边 + 大圆角 +
+       层层轮廓」，不单纯来自两层结构。 */
+    --piece-w: calc(var(--cell-w) * 64 / 70);
+    --piece-h: calc(var(--cell-h) * 46 / 52);
+    --piece-radius: calc(var(--cell-h) * 4 / 52);
     --label-size: calc(var(--cell-h) * 0.18);
     --river-text: calc(var(--cell-h) * 0.25);
 
@@ -159,7 +162,7 @@
     let bg = '';
     if (isWater(i)) { sq.classList.add('water');
       if (isCroc(i)) sq.appendChild(terr(A + 'croc.png', 124, 124));
-      else if (LILY.includes(i)) sq.appendChild(terr(A + 'lily.png', 84, 84));
+      else if (LILY.includes(i)) sq.appendChild(terr(A + 'lily.png', 104, 104));
     } else if (i === idx(3,8)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-mine.png', 92, 100)); }
     else if (i === idx(3,0)) { bg = 'var(--den-bg)'; sq.appendChild(terr(A + 'den-foe.png', 92, 100, true)); }
     // 陷阱：两边各自朝向自己的兽穴。翻红方（上方）这一侧。
